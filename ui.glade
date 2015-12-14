@@ -4,7 +4,7 @@
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkWindow" id="main_window">
     <property name="can_focus">False</property>
-    <signal name="destroy" handler="on_window_destroy" swapped="no"/>
+    <signal name="destroy" handler="on_window_destroy_cb" swapped="no"/>
     <child>
       <object class="GtkBox" id="box1">
         <property name="visible">True</property>
@@ -35,6 +35,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <signal name="clicked" handler="stop_btn_clicked_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">3</property>
@@ -47,6 +48,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <signal name="clicked" handler="read_btn_clicked_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">2</property>

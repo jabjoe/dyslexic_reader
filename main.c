@@ -1,9 +1,19 @@
 #include <gtk/gtk.h>
 #include <libspeechd.h>
 
-extern void on_window_destroy (GObject *object, gpointer user_data)
+extern void on_window_destroy_cb (GObject *object, gpointer user_data)
 {
         gtk_main_quit();
+}
+
+
+extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
+{
+}
+
+
+extern void stop_btn_clicked_cb (GObject *object, gpointer user_data)
+{
 }
 
 
@@ -30,6 +40,8 @@ int main(int argc, char* argv[])
         gtk_widget_show (window);
         gtk_main ();
         
+        spd_say(speech_con, SPD_TEXT, "good bye world");
+
         spd_close(speech_con);
     }
 
