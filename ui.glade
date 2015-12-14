@@ -42,7 +42,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <signal name="clicked" handler="stop_btn_clicked_cb" swapped="no"/>
+                <signal name="clicked" handler="stop_btn_clicked_cb" object="main_window" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">3</property>
@@ -55,7 +55,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <signal name="clicked" handler="read_btn_clicked_cb" swapped="no"/>
+                <signal name="clicked" handler="read_btn_clicked_cb" object="main_window" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">2</property>
