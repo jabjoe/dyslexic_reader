@@ -16,6 +16,7 @@ extern bool                dyslexic_reader_is_reading(dyslexic_reader_t* reader)
 
 //Externally defined.
 extern void                reading_stopped(dyslexic_reader_t* reader);
+extern void                reading_updated(dyslexic_reader_t* reader);
 
 
 #endif //__DYSLEXIC_READER__

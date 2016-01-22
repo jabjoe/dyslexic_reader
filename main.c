@@ -48,6 +48,12 @@ void reading_stopped(dyslexic_reader_t *reader)
 }
 
 
+void reading_updated(dyslexic_reader_t* reader)
+{
+    gtk_widget_show_all(GTK_WIDGET(text_view));
+}
+
+
 int main(int argc, char* argv[])
 {
     gtk_init (&argc, &argv);

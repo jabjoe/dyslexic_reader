@@ -14,6 +14,9 @@ struct dyslexic_reader_t
     bool            paused;
     bool            reading;
     void          * userdata;
+    GtkTextIter     speaking_start;
+    GtkTextIter     speaking_end;
+    GtkTextTag    * speaking_tag;
 };
 
 dyslexic_reader_t * dyslexic_reader_singleton = NULL;
@@ -22,8 +25,7 @@ dyslexic_reader_t * dyslexic_reader_singleton = NULL;
 static void mark_up_text(dyslexic_reader_t *reader)
 {
     char mark_buf[32];
-    GtkTextIter start;
-    GtkTextIter end;
+    GtkTextIter start, end;
 
     g_string_truncate(reader->marked_text, 0);
 
@@ -56,11 +58,35 @@ static void mark_up_text(dyslexic_reader_t *reader)
 }
 
 
+static void show_speaking(dyslexic_reader_t *reader, gint start, gint end)
+{
+    gtk_text_buffer_remove_tag(reader->text_buffer,
+                               reader->speaking_tag,
+                               &reader->speaking_start,
+                               &reader->speaking_end);
+
+    gtk_text_iter_set_offset(&reader->speaking_start, start);
+    gtk_text_iter_set_offset(&reader->speaking_end, end);
+
+    gtk_text_buffer_apply_tag(reader->text_buffer,
+                              reader->speaking_tag,
+                              &reader->speaking_start,
+                              &reader->speaking_end);
+
+    reading_updated(reader);
+}
+
+
+
 static void speech_im_cb(size_t msg_id, size_t client_id, SPDNotificationType state, char *index_mark)
 {
-    printf("state: %i\n", state);
     if (index_mark)
+    {
+        gint i,j;
         printf("index_mark: %s\n", index_mark);
+        sscanf(index_mark, "%i-%i", &i, &j);
+        show_speaking(dyslexic_reader_singleton, i, j);
+    }
 }
 
 
@@ -110,6 +136,15 @@ dyslexic_reader_t *dyslexic_reader_create(GtkTextBuffer * text_buffer)
         return NULL;
     }
 
+    reader->speaking_tag = gtk_text_buffer_create_tag(reader->text_buffer, "speaking", "background", "black", "foreground", "white", NULL);
+    if (!reader->speaking_tag)
+    {
+        g_critical("Dyslexic reader failed to create speaking tag.");
+        spd_close(reader->speech_con);
+        free(reader);
+        return NULL;
+    }
+
     reader->speech_con->callback_im = speech_im_cb;
     reader->speech_con->callback_end = speech_end_cb;
 
@@ -138,6 +173,9 @@ bool dyslexic_reader_start_read(dyslexic_reader_t* reader)
         mark_up_text(reader);
         if (reader->marked_text->len)
         {
+            gtk_text_buffer_get_iter_at_offset(reader->text_buffer, &reader->speaking_start, 0);
+            gtk_text_buffer_get_iter_at_offset(reader->text_buffer, &reader->speaking_end, 0);
+
             int msg_id = spd_say(reader->speech_con, SPD_TEXT, reader->marked_text->str);
             printf("msg_id:%i\n", msg_id);
             if (msg_id > 0)
