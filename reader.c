@@ -84,47 +84,49 @@ void dyslexic_reader_destroy(dyslexic_reader_t* reader)
 }
 
 
-void dyslexic_reader_start_read(dyslexic_reader_t* reader)
+bool dyslexic_reader_start_read(dyslexic_reader_t* reader)
 {
     if (reader->paused)
-        spd_resume(reader->speech_con);
+        return (spd_resume(reader->speech_con) == 0);
     else
     {
-        spd_say(reader->speech_con, SPD_TEXT, "<mark name=\"id\"/>hello <mark name=\"id2\"/>world");
-        reader->reading = true;
+        int msg_id = spd_say(reader->speech_con, SPD_TEXT, "<mark name=\"id\"/>hello <mark name=\"id2\"/>world");
+        printf("msg_id:%i\n", msg_id);
+        if (msg_id > 0)
+        {
+            reader->reading = true;
+            return true;
+        }
+        return false;
     }
 }
 
 
-void dyslexic_reader_start_pause(dyslexic_reader_t* reader)
+bool dyslexic_reader_start_pause(dyslexic_reader_t* reader)
 {
-    spd_pause(reader->speech_con);
-    reader->paused = true;
+    if (spd_pause(reader->speech_con) == 0)
+    {
+        reader->paused = true;
+        return true;
+    }
+    return false;
 }
 
 
-void                dyslexic_reader_start_stop(dyslexic_reader_t* reader)
+bool                dyslexic_reader_start_stop(dyslexic_reader_t* reader)
 {
-    spd_stop(reader->speech_con);
-    reader->paused = false;
-    reader->reading = false;
-    reading_stopped(reader);
+    if (spd_stop(reader->speech_con) == 0)
+    {
+        reader->paused = false;
+        reader->reading = false;
+        reading_stopped(reader);
+        return true;
+    }
+    return false;
 }
 
 
 bool                dyslexic_reader_is_reading(dyslexic_reader_t* reader)
 {
     return reader->reading;
-}
-
-
-void                dyslexic_reader_set_userdata(dyslexic_reader_t* reader, void * userdata)
-{
-    reader->userdata = userdata;
-}
-
-
-void              * dyslexic_reader_get_userdata(dyslexic_reader_t* reader)
-{
-    return reader->userdata;
 }

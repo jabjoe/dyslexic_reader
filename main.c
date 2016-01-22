@@ -2,22 +2,30 @@
 #include "reader.h"
 
 
+GtkWidget* read_btn  = NULL;
+GtkWidget* pause_btn = NULL;
+
+
 extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
 {
     dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(user_data), "reader");
-    GtkButton *button = GTK_BUTTON(object);
 
-    dyslexic_reader_set_userdata(reader, button);
-
-    if (!dyslexic_reader_is_reading(reader))
+    if (dyslexic_reader_start_read(reader))
     {
-        gtk_button_set_label(button, "Pause");
-        dyslexic_reader_start_read(reader);
+        gtk_widget_hide(read_btn);
+        gtk_widget_show_all(pause_btn);
     }
-    else
+}
+
+
+extern void pause_btn_clicked_cb (GObject *object, gpointer user_data)
+{
+    dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(user_data), "reader");
+
+    if (dyslexic_reader_start_pause(reader))
     {
-        gtk_button_set_label(button, "Read");
-        dyslexic_reader_start_pause(reader);
+        gtk_widget_hide(pause_btn);
+        gtk_widget_show_all(read_btn);
     }
 }
 
@@ -32,9 +40,8 @@ extern void stop_btn_clicked_cb (GObject *object, gpointer user_data)
 
 void reading_stopped(dyslexic_reader_t *reader)
 {
-    GtkButton *button = (GtkButton*)dyslexic_reader_get_userdata(reader);
-    if (button)
-        gtk_button_set_label(button, "Read");
+    gtk_widget_hide(pause_btn);
+    gtk_widget_show_all(read_btn);
 }
 
 
@@ -68,6 +75,16 @@ int main(int argc, char* argv[])
     if (!text_buffer)
     {
         g_critical("Dyslexic reader requires \"text_buffer\" from GtkBuilder.");
+        g_object_unref(builder);
+        return EXIT_FAILURE;
+    }
+
+    read_btn  = GTK_WIDGET (gtk_builder_get_object (builder, "read_btn"));
+    pause_btn = GTK_WIDGET (gtk_builder_get_object (builder, "pause_btn"));
+
+    if (!read_btn || !pause_btn)
+    {
+        g_critical("Dyslexic reader requires \"read_btn\" and \"pause_btn\" from GtkBuilder.");
         g_object_unref(builder);
         return EXIT_FAILURE;
     }
