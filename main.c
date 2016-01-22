@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <gtkspell/gtkspell.h>
 #include "reader.h"
 
 
@@ -107,13 +108,25 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    GtkSpellChecker *spellcheck = gtk_spell_checker_new();
+    if (!spellcheck)
+    {
+        g_critical("Dyslexic reader failed to create spell check.");
+        g_object_unref(builder);
+        return EXIT_FAILURE;
+    }
+
+    gtk_spell_checker_attach(spellcheck, text_view);
+
     gtk_builder_connect_signals (builder, NULL); 
+
 
     dyslexic_reader_t* reader = dyslexic_reader_create(text_buffer);
 
     if (reader)
     {
         g_object_set_data(G_OBJECT(window), "reader", reader);
+        g_object_set_data(G_OBJECT(window), "spellcheck", spellcheck);
         gtk_widget_show (window);
         gtk_main ();
         dyslexic_reader_destroy(reader);

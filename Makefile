@@ -1,5 +1,5 @@
-CFLAGS := `pkg-config gtk+-3.0 speech-dispatcher --cflags` -MMD -MP
-LDFLAGS := `pkg-config gtk+-3.0 speech-dispatcher --libs` -rdynamic
+CFLAGS := `pkg-config gtk+-3.0 speech-dispatcher gtkspell3-3.0 --cflags` -MMD -MP
+LDFLAGS := `pkg-config gtk+-3.0 speech-dispatcher gtkspell3-3.0 --libs` -rdynamic
 
 EXE_NAME := dyslexic_reader
 
