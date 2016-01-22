@@ -5,8 +5,20 @@
 extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
 {
     dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(user_data), "reader");
+    GtkButton *button = GTK_BUTTON(object);
 
-    dyslexic_reader_start_read(reader);
+    dyslexic_reader_set_userdata(reader, button);
+
+    if (!dyslexic_reader_is_reading(reader))
+    {
+        gtk_button_set_label(button, "Pause");
+        dyslexic_reader_start_read(reader);
+    }
+    else
+    {
+        gtk_button_set_label(button, "Read");
+        dyslexic_reader_start_pause(reader);
+    }
 }
 
 
@@ -14,7 +26,15 @@ extern void stop_btn_clicked_cb (GObject *object, gpointer user_data)
 {
     dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(user_data), "reader");
 
-    dyslexic_reader_start_pause(reader);
+    dyslexic_reader_start_stop(reader);
+}
+
+
+void reading_stopped(dyslexic_reader_t *reader)
+{
+    GtkButton *button = (GtkButton*)dyslexic_reader_get_userdata(reader);
+    if (button)
+        gtk_button_set_label(button, "Read");
 }
 
 
@@ -54,10 +74,11 @@ int main(int argc, char* argv[])
 
     gtk_builder_connect_signals (builder, NULL); 
 
-    dyslexic_reader_t* reader = dyslexic_reader_create(window, text_buffer);
+    dyslexic_reader_t* reader = dyslexic_reader_create(text_buffer);
 
     if (reader)
     {
+        g_object_set_data(G_OBJECT(window), "reader", reader);
         gtk_widget_show (window);
         gtk_main ();
         dyslexic_reader_destroy(reader);

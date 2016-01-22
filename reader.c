@@ -12,10 +12,12 @@ struct dyslexic_reader_t
     uint32_t        marked_text_len;
     SPDConnection * speech_con;
     GtkTextBuffer * text_buffer;
-    GtkWidget     * window;
+    bool            paused;
+    bool            reading;
+    void          * userdata;
 };
 
-
+dyslexic_reader_t * dyslexic_reader_singleton = NULL;
 
 static void speech_im_cb(size_t msg_id, size_t client_id, SPDNotificationType state, char *index_mark)
 {
@@ -27,15 +29,22 @@ static void speech_im_cb(size_t msg_id, size_t client_id, SPDNotificationType st
 
 static void speech_end_cb(size_t msg_id, size_t client_id, SPDNotificationType state)
 {
-    
+    dyslexic_reader_singleton->reading = false;
+    dyslexic_reader_singleton->paused = false;
+    reading_stopped(dyslexic_reader_singleton);
 }
 
 
-dyslexic_reader_t *dyslexic_reader_create(GtkWidget * window, GtkTextBuffer * text_buffer)
+dyslexic_reader_t *dyslexic_reader_create(GtkTextBuffer * text_buffer)
 {
-    assert(window);
     assert(text_buffer);
-    
+
+    if (dyslexic_reader_singleton)
+    {
+        g_critical("Dyslexic reader singleton already set.");
+        return NULL;
+    }
+
     dyslexic_reader_t* reader = (dyslexic_reader_t*)malloc(sizeof(dyslexic_reader_t));
     if (!reader)
     {
@@ -43,8 +52,10 @@ dyslexic_reader_t *dyslexic_reader_create(GtkWidget * window, GtkTextBuffer * te
         return NULL;
     }
 
-    reader->window      = window;
     reader->text_buffer = text_buffer;
+    reader->paused = false;
+    reader->reading = false;
+    reader->userdata = NULL;
 
     reader->speech_con  = spd_open("dyslexic_reader", NULL, NULL, SPD_MODE_THREADED);
     if (!reader->speech_con)
@@ -60,7 +71,7 @@ dyslexic_reader_t *dyslexic_reader_create(GtkWidget * window, GtkTextBuffer * te
     spd_set_notification_on(reader->speech_con, SPD_ALL);
     spd_set_data_mode(reader->speech_con, SPD_DATA_SSML);
 
-    g_object_set_data(G_OBJECT(reader->window), "reader", reader);
+    dyslexic_reader_singleton = reader;
 
     return reader;
 }
@@ -75,11 +86,45 @@ void dyslexic_reader_destroy(dyslexic_reader_t* reader)
 
 void dyslexic_reader_start_read(dyslexic_reader_t* reader)
 {
-    spd_say(reader->speech_con, SPD_TEXT, "<mark name=\"id\"/>hello <mark name=\"id2\"/>world");
+    if (reader->paused)
+        spd_resume(reader->speech_con);
+    else
+    {
+        spd_say(reader->speech_con, SPD_TEXT, "<mark name=\"id\"/>hello <mark name=\"id2\"/>world");
+        reader->reading = true;
+    }
 }
 
 
 void dyslexic_reader_start_pause(dyslexic_reader_t* reader)
 {
     spd_pause(reader->speech_con);
+    reader->paused = true;
+}
+
+
+void                dyslexic_reader_start_stop(dyslexic_reader_t* reader)
+{
+    spd_stop(reader->speech_con);
+    reader->paused = false;
+    reader->reading = false;
+    reading_stopped(reader);
+}
+
+
+bool                dyslexic_reader_is_reading(dyslexic_reader_t* reader)
+{
+    return reader->reading;
+}
+
+
+void                dyslexic_reader_set_userdata(dyslexic_reader_t* reader, void * userdata)
+{
+    reader->userdata = userdata;
+}
+
+
+void              * dyslexic_reader_get_userdata(dyslexic_reader_t* reader)
+{
+    return reader->userdata;
 }
