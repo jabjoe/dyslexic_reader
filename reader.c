@@ -8,8 +8,7 @@
 
 struct dyslexic_reader_t
 {
-    char          * marked_text;
-    uint32_t        marked_text_len;
+    GString       * marked_text;
     SPDConnection * speech_con;
     GtkTextBuffer * text_buffer;
     bool            paused;
@@ -18,6 +17,44 @@ struct dyslexic_reader_t
 };
 
 dyslexic_reader_t * dyslexic_reader_singleton = NULL;
+
+
+static void mark_up_text(dyslexic_reader_t *reader)
+{
+    char mark_buf[32];
+    GtkTextIter start;
+    GtkTextIter end;
+
+    g_string_truncate(reader->marked_text, 0);
+
+    gtk_text_buffer_get_iter_at_offset (reader->text_buffer, &start, 0);
+
+    do
+    {
+        gtk_text_iter_assign(&end, &start);
+
+        if (!gtk_text_iter_forward_word_end(&end))
+            gtk_text_iter_forward_to_end(&end);
+
+        g_string_append_printf(reader->marked_text, "<mark name=\"%i-%i\"/>", gtk_text_iter_get_offset(&start), gtk_text_iter_get_offset(&end));
+        g_string_append_printf(reader->marked_text, gtk_text_iter_get_visible_slice (&start, &end));
+
+        if (!gtk_text_iter_is_end(&end))
+        {
+            GtkTextIter gap;
+            gtk_text_iter_assign(&start, &end);
+            gtk_text_iter_assign(&gap, &end);
+
+            while(gtk_text_iter_forward_char(&start) && !gtk_text_iter_starts_word(&start));
+
+            g_string_append_printf(reader->marked_text, gtk_text_iter_get_visible_slice (&gap, &start));
+        }
+    }
+    while(!gtk_text_iter_is_end(&start));
+
+    printf("Marked text: \"%s\"\n", reader->marked_text->str);
+}
+
 
 static void speech_im_cb(size_t msg_id, size_t client_id, SPDNotificationType state, char *index_mark)
 {
@@ -49,6 +86,14 @@ dyslexic_reader_t *dyslexic_reader_create(GtkTextBuffer * text_buffer)
     if (!reader)
     {
         g_critical("Dyslexic reader allocation failed.");
+        return NULL;
+    }
+
+    reader->marked_text = g_string_new(NULL);
+    if (!reader->marked_text)
+    {
+        g_critical("Dyslexic reader failed create GString.");
+        free(reader);
         return NULL;
     }
 
@@ -90,12 +135,16 @@ bool dyslexic_reader_start_read(dyslexic_reader_t* reader)
         return (spd_resume(reader->speech_con) == 0);
     else
     {
-        int msg_id = spd_say(reader->speech_con, SPD_TEXT, "<mark name=\"id\"/>hello <mark name=\"id2\"/>world");
-        printf("msg_id:%i\n", msg_id);
-        if (msg_id > 0)
+        mark_up_text(reader);
+        if (reader->marked_text->len)
         {
-            reader->reading = true;
-            return true;
+            int msg_id = spd_say(reader->speech_con, SPD_TEXT, reader->marked_text->str);
+            printf("msg_id:%i\n", msg_id);
+            if (msg_id > 0)
+            {
+                reader->reading = true;
+                return true;
+            }
         }
         return false;
     }

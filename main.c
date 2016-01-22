@@ -2,8 +2,9 @@
 #include "reader.h"
 
 
-GtkWidget* read_btn  = NULL;
-GtkWidget* pause_btn = NULL;
+GtkWidget   * read_btn  = NULL;
+GtkWidget   * pause_btn = NULL;
+GtkTextView * text_view = NULL;
 
 
 extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
@@ -12,6 +13,7 @@ extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
 
     if (dyslexic_reader_start_read(reader))
     {
+        gtk_text_view_set_editable (text_view, FALSE);
         gtk_widget_hide(read_btn);
         gtk_widget_show_all(pause_btn);
     }
@@ -42,6 +44,7 @@ void reading_stopped(dyslexic_reader_t *reader)
 {
     gtk_widget_hide(pause_btn);
     gtk_widget_show_all(read_btn);
+    gtk_text_view_set_editable (text_view, TRUE);
 }
 
 
@@ -81,10 +84,11 @@ int main(int argc, char* argv[])
 
     read_btn  = GTK_WIDGET (gtk_builder_get_object (builder, "read_btn"));
     pause_btn = GTK_WIDGET (gtk_builder_get_object (builder, "pause_btn"));
+    text_view = GTK_TEXT_VIEW (gtk_builder_get_object (builder, "text_view"));
 
-    if (!read_btn || !pause_btn)
+    if (!read_btn || !pause_btn || !text_view)
     {
-        g_critical("Dyslexic reader requires \"read_btn\" and \"pause_btn\" from GtkBuilder.");
+        g_critical("Dyslexic reader requires \"read_btn\" + \"pause_btn\" + \"text_view\" from GtkBuilder.");
         g_object_unref(builder);
         return EXIT_FAILURE;
     }
