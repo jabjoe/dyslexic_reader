@@ -8,10 +8,11 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkTextBuffer" id="text_buffer"/>
   <object class="GtkWindow" id="main_window">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">Dyslexic Reader</property>
-    <signal name="destroy" handler="on_window_destroy_cb" swapped="no"/>
+    <signal name="destroy" handler="gtk_main_quit" swapped="no"/>
     <child>
       <object class="GtkBox" id="box1">
         <property name="visible">True</property>
@@ -23,6 +24,8 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="wrap_mode">word</property>
+            <property name="buffer">text_buffer</property>
+            <property name="monospace">True</property>
           </object>
           <packing>
             <property name="expand">True</property>

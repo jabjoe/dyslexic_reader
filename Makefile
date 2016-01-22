@@ -3,7 +3,7 @@ LDFLAGS := `pkg-config gtk+-3.0 speech-dispatcher --libs` -rdynamic
 
 EXE_NAME := dyslexic_reader
 
-$(EXE_NAME) : main.o
+$(EXE_NAME) : main.o reader.o
 	$(CC) $^ $(LDFLAGS) -o $@
 
 .PHONT: clean
