@@ -40,6 +40,14 @@ extern void stop_btn_clicked_cb (GObject *object, gpointer user_data)
 }
 
 
+extern void speed_changed_cb(GtkAdjustment *speed_spin_adj, gpointer user_data)
+{
+    dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(user_data), "reader");
+
+    dyslexic_reader_set_rate(reader, gtk_adjustment_get_value (speed_spin_adj));
+}
+
+
 void reading_stopped(dyslexic_reader_t *reader)
 {
     gtk_widget_hide(pause_btn);

@@ -12,7 +12,6 @@ struct dyslexic_reader_t
     SPDConnection * speech_con;
     GtkTextBuffer * text_buffer;
     bool            paused;
-    bool            reading;
     void          * userdata;
     GtkTextIter     speaking_start;
     GtkTextIter     speaking_end;
@@ -89,12 +88,20 @@ static void speech_im_cb(size_t msg_id, size_t client_id, SPDNotificationType st
     }
 }
 
+static void dyslexic_reader_stopping(dyslexic_reader_t* reader)
+{
+    reader->paused = false;
+    gtk_text_buffer_remove_tag(reader->text_buffer,
+                               reader->speaking_tag,
+                               &reader->speaking_start,
+                               &reader->speaking_end);
+    reading_stopped(reader);
+}
+
 
 static void speech_end_cb(size_t msg_id, size_t client_id, SPDNotificationType state)
 {
-    dyslexic_reader_singleton->reading = false;
-    dyslexic_reader_singleton->paused = false;
-    reading_stopped(dyslexic_reader_singleton);
+    dyslexic_reader_stopping(dyslexic_reader_singleton);
 }
 
 
@@ -125,7 +132,6 @@ dyslexic_reader_t *dyslexic_reader_create(GtkTextBuffer * text_buffer)
 
     reader->text_buffer = text_buffer;
     reader->paused = false;
-    reader->reading = false;
     reader->userdata = NULL;
 
     reader->speech_con  = spd_open("dyslexic_reader", NULL, NULL, SPD_MODE_THREADED);
@@ -179,10 +185,7 @@ bool dyslexic_reader_start_read(dyslexic_reader_t* reader)
             int msg_id = spd_say(reader->speech_con, SPD_TEXT, reader->marked_text->str);
             printf("msg_id:%i\n", msg_id);
             if (msg_id > 0)
-            {
-                reader->reading = true;
                 return true;
-            }
         }
         return false;
     }
@@ -204,16 +207,14 @@ bool                dyslexic_reader_start_stop(dyslexic_reader_t* reader)
 {
     if (spd_stop(reader->speech_con) == 0)
     {
-        reader->paused = false;
-        reader->reading = false;
-        reading_stopped(reader);
+        dyslexic_reader_stopping(reader);
         return true;
     }
     return false;
 }
 
 
-bool                dyslexic_reader_is_reading(dyslexic_reader_t* reader)
+void                dyslexic_reader_set_rate(dyslexic_reader_t* reader, double rate)
 {
-    return reader->reading;
+    spd_set_voice_rate(reader->speech_con, rate);
 }
