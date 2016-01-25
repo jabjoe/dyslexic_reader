@@ -58,23 +58,30 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
     GtkSpellChecker *spellcheck = (GtkSpellChecker*) g_object_get_data(G_OBJECT(main_window), "spellcheck");
 
     GtkComboBoxText* voices_ui = GTK_COMBO_BOX_TEXT (gtk_builder_get_object (builder, "voice_dropdown"));
+    GtkComboBoxText* language_ui = GTK_COMBO_BOX_TEXT (gtk_builder_get_object (builder, "language_dropdown"));
 
     gtk_combo_box_text_remove_all(voices_ui);
+    gtk_combo_box_text_remove_all(language_ui);
 
     const char* const * voices = dyslexic_reader_list_voices(reader);
-    const char* const * voice = voices;
+    const char* const * p = voices;
 
-    while(*voice)
-    {
-        gtk_combo_box_text_append_text(voices_ui,  *voice);
-        voice++;
-    }
+    while(*p)
+        gtk_combo_box_text_append_text(voices_ui,  *p++);
+
+    const char* const * languages = dyslexic_reader_list_languages(reader);
+    p = languages;
+
+    while(*p)
+        gtk_combo_box_text_append_text(language_ui,  *p++);
 
     gtk_combo_box_set_active(GTK_COMBO_BOX(voices_ui), 1);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(language_ui), 10);
 
     gtk_dialog_run(settings_dialog);
 
     dyslexic_reader_set_voice(reader, voices[gtk_combo_box_get_active(GTK_COMBO_BOX(voices_ui))]);
+    dyslexic_reader_set_language(reader, languages[gtk_combo_box_get_active(GTK_COMBO_BOX(language_ui))]);
 }
 
 

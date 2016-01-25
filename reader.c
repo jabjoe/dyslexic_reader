@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 #include <libspeechd.h>
 
 #include "reader.h"
@@ -16,6 +17,7 @@ struct dyslexic_reader_t
     GtkTextIter     speaking_start;
     GtkTextIter     speaking_end;
     GtkTextTag    * speaking_tag;
+    char         ** languages;
 };
 
 static dyslexic_reader_t * dyslexic_reader_singleton = NULL;
@@ -133,6 +135,7 @@ dyslexic_reader_t *dyslexic_reader_create(GtkTextBuffer * text_buffer)
     reader->text_buffer = text_buffer;
     reader->paused = false;
     reader->userdata = NULL;
+    reader->languages = NULL;
 
     reader->speech_con  = spd_open("dyslexic_reader", NULL, NULL, SPD_MODE_THREADED);
     if (!reader->speech_con)
@@ -166,6 +169,13 @@ dyslexic_reader_t *dyslexic_reader_create(GtkTextBuffer * text_buffer)
 void dyslexic_reader_destroy(dyslexic_reader_t* reader)
 {
    spd_close(reader->speech_con);
+   if (reader->languages)
+   {
+       char ** p = reader->languages;
+       while(*p)
+           free(*p++);
+       free(reader->languages);
+   }
    free(reader);
 }
 
@@ -222,14 +232,6 @@ void                dyslexic_reader_set_rate(dyslexic_reader_t* reader, double r
 
 const char* const*  dyslexic_reader_list_voices(dyslexic_reader_t* reader)
 {
-    SPDVoice** temp = spd_list_synthesis_voices(reader->speech_con);
-
-    while(*temp)
-    {
-        printf("SPDVoice: %s %s %s\n", (*temp)->name, (*temp)->language, (*temp)->variant);
-        temp++;
-    }
-
     return (const char* const*)spd_list_voices(reader->speech_con);
 }
 
@@ -242,11 +244,48 @@ bool                dyslexic_reader_set_voice(dyslexic_reader_t* reader, const c
     {
         if (*voices == voice)
         {
-            if (spd_set_voice_type(reader->speech_con, type) == 0)
+            if (!spd_set_voice_type(reader->speech_con, type))
                 return true;
         }
         voices++;
         type++;
     }
+    return false;
+}
+
+
+const char* const*  dyslexic_reader_list_languages(dyslexic_reader_t* reader)
+{
+    if (reader->languages)
+        return (const char* const*)reader->languages;
+
+    SPDVoice** languages = spd_list_synthesis_voices(reader->speech_con);
+    SPDVoice** languages_pos = languages;
+    uint32_t count = 1; //For null
+
+    while(*languages_pos++)
+        count++;
+
+    reader->languages = (char**)malloc(sizeof(char*)*count);
+    char** languages_pos2 = reader->languages;
+    languages_pos = languages;
+
+    for(;*languages_pos;languages_pos++)
+        *languages_pos2++ = strdup((*languages_pos)->name);
+
+    *languages_pos2 = NULL;
+    return (const char* const*)reader->languages;
+}
+
+
+bool                dyslexic_reader_set_language(dyslexic_reader_t* reader, const char* language)
+{
+    SPDVoice** languages = spd_list_synthesis_voices(reader->speech_con);
+    SPDVoice** languages_pos = languages;
+
+    for(;*languages_pos;languages_pos++)
+        if (!strcmp((*languages_pos)->name, language))
+            if (!spd_set_language(reader->speech_con, (*languages_pos)->language))
+                return true;
     return false;
 }
