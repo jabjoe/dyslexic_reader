@@ -14,6 +14,9 @@ extern bool                dyslexic_reader_start_stop(dyslexic_reader_t* reader)
 
 extern void                dyslexic_reader_set_rate(dyslexic_reader_t* reader, double rate);
 
+extern const char* const*  dyslexic_reader_list_voices(dyslexic_reader_t* reader);
+extern bool                dyslexic_reader_set_voice(dyslexic_reader_t* reader, const char* voice);
+
 
 //Externally defined.
 extern void                reading_stopped(dyslexic_reader_t* reader);

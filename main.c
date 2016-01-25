@@ -3,10 +3,12 @@
 #include "reader.h"
 
 
-GtkWidget   * read_btn  = NULL;
-GtkWidget   * pause_btn = NULL;
-GtkTextView * text_view = NULL;
-
+GtkWidget   * read_btn     = NULL;
+GtkWidget   * pause_btn    = NULL;
+GtkWidget   * settings_btn = NULL;
+GtkWidget   * main_window  = NULL;
+GtkTextView * text_view    = NULL;
+GtkBuilder  * builder      = NULL;
 
 extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
 {
@@ -17,6 +19,7 @@ extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
         gtk_text_view_set_editable (text_view, FALSE);
         gtk_widget_hide(read_btn);
         gtk_widget_show_all(pause_btn);
+        gtk_widget_set_sensitive(settings_btn, FALSE);
     }
 }
 
@@ -49,11 +52,38 @@ extern void speed_changed_cb(GtkAdjustment *speed_spin_adj, gpointer user_data)
 }
 
 
+extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog )
+{
+    dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(main_window), "reader");
+    GtkSpellChecker *spellcheck = (GtkSpellChecker*) g_object_get_data(G_OBJECT(main_window), "spellcheck");
+
+    GtkComboBoxText* voices_ui = GTK_COMBO_BOX_TEXT (gtk_builder_get_object (builder, "voice_dropdown"));
+
+    gtk_combo_box_text_remove_all(voices_ui);
+
+    const char* const * voices = dyslexic_reader_list_voices(reader);
+    const char* const * voice = voices;
+
+    while(*voice)
+    {
+        gtk_combo_box_text_append_text(voices_ui,  *voice);
+        voice++;
+    }
+
+    gtk_combo_box_set_active(GTK_COMBO_BOX(voices_ui), 1);
+
+    gtk_dialog_run(settings_dialog);
+
+    dyslexic_reader_set_voice(reader, voices[gtk_combo_box_get_active(GTK_COMBO_BOX(voices_ui))]);
+}
+
+
 void reading_stopped(dyslexic_reader_t *reader)
 {
     gtk_widget_hide(pause_btn);
     gtk_widget_show_all(read_btn);
     gtk_text_view_set_editable (text_view, TRUE);
+    gtk_widget_set_sensitive(settings_btn, TRUE);
 }
 
 
@@ -67,7 +97,7 @@ int main(int argc, char* argv[])
 {
     gtk_init (&argc, &argv);
 
-    GtkBuilder    * builder = gtk_builder_new ();
+    builder = gtk_builder_new ();
 
     if (!builder)
     {
@@ -82,8 +112,8 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    GtkWidget * window = GTK_WIDGET (gtk_builder_get_object (builder, "main_window"));
-    if (!window)
+    main_window = GTK_WIDGET (gtk_builder_get_object (builder, "main_window"));
+    if (!main_window)
     {
         g_critical("Dyslexic reader requires \"main_window\" from GtkBuilder.");
         g_object_unref(builder);
@@ -97,13 +127,14 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    read_btn  = GTK_WIDGET (gtk_builder_get_object (builder, "read_btn"));
-    pause_btn = GTK_WIDGET (gtk_builder_get_object (builder, "pause_btn"));
+    read_btn     = GTK_WIDGET (gtk_builder_get_object (builder, "read_btn"));
+    pause_btn    = GTK_WIDGET (gtk_builder_get_object (builder, "pause_btn"));
+    settings_btn = GTK_WIDGET (gtk_builder_get_object (builder, "settings_btn"));
     text_view = GTK_TEXT_VIEW (gtk_builder_get_object (builder, "text_view"));
 
-    if (!read_btn || !pause_btn || !text_view)
+    if (!read_btn || !pause_btn || !text_view || !settings_btn)
     {
-        g_critical("Dyslexic reader requires \"read_btn\" + \"pause_btn\" + \"text_view\" from GtkBuilder.");
+        g_critical("Dyslexic reader has not found are required widgets from GtkBuilder.");
         g_object_unref(builder);
         return EXIT_FAILURE;
     }
@@ -118,16 +149,16 @@ int main(int argc, char* argv[])
 
     gtk_spell_checker_attach(spellcheck, text_view);
 
-    gtk_builder_connect_signals (builder, NULL); 
+    gtk_builder_connect_signals (builder, NULL);
 
 
     dyslexic_reader_t* reader = dyslexic_reader_create(text_buffer);
 
     if (reader)
     {
-        g_object_set_data(G_OBJECT(window), "reader", reader);
-        g_object_set_data(G_OBJECT(window), "spellcheck", spellcheck);
-        gtk_widget_show (window);
+        g_object_set_data(G_OBJECT(main_window), "reader", reader);
+        g_object_set_data(G_OBJECT(main_window), "spellcheck", spellcheck);
+        gtk_widget_show (main_window);
         gtk_main ();
         dyslexic_reader_destroy(reader);
         g_object_unref(builder);

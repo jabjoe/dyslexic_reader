@@ -18,7 +18,7 @@ struct dyslexic_reader_t
     GtkTextTag    * speaking_tag;
 };
 
-dyslexic_reader_t * dyslexic_reader_singleton = NULL;
+static dyslexic_reader_t * dyslexic_reader_singleton = NULL;
 
 
 static void mark_up_text(dyslexic_reader_t *reader)
@@ -217,4 +217,36 @@ bool                dyslexic_reader_start_stop(dyslexic_reader_t* reader)
 void                dyslexic_reader_set_rate(dyslexic_reader_t* reader, double rate)
 {
     spd_set_voice_rate(reader->speech_con, rate);
+}
+
+
+const char* const*  dyslexic_reader_list_voices(dyslexic_reader_t* reader)
+{
+    SPDVoice** temp = spd_list_synthesis_voices(reader->speech_con);
+
+    while(*temp)
+    {
+        printf("SPDVoice: %s %s %s\n", (*temp)->name, (*temp)->language, (*temp)->variant);
+        temp++;
+    }
+
+    return (const char* const*)spd_list_voices(reader->speech_con);
+}
+
+
+bool                dyslexic_reader_set_voice(dyslexic_reader_t* reader, const char* voice)
+{
+    const char* const* voices = (const char* const*)spd_list_voices(reader->speech_con);
+    SPDVoiceType type = SPD_MALE1;
+    while(*voices)
+    {
+        if (*voices == voice)
+        {
+            if (spd_set_voice_type(reader->speech_con, type) == 0)
+                return true;
+        }
+        voices++;
+        type++;
+    }
+    return false;
 }
