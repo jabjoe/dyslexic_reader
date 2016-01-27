@@ -45,11 +45,15 @@ extern void stop_btn_clicked_cb (GObject *object, gpointer user_data)
 }
 
 
-extern void speed_changed_cb(GtkAdjustment *speed_spin_adj, gpointer user_data)
+extern void settings_ok_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog )
 {
-    dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(user_data), "reader");
+    gtk_dialog_response(settings_dialog, GTK_RESPONSE_OK);
+}
 
-    dyslexic_reader_set_rate(reader, gtk_adjustment_get_value (speed_spin_adj));
+
+extern void settings_cancel_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog )
+{
+    gtk_dialog_response(settings_dialog, GTK_RESPONSE_CANCEL);
 }
 
 
@@ -60,6 +64,7 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
 
     GtkComboBoxText* voices_ui = GTK_COMBO_BOX_TEXT (gtk_builder_get_object (builder, "voice_dropdown"));
     GtkComboBoxText* language_ui = GTK_COMBO_BOX_TEXT (gtk_builder_get_object (builder, "language_dropdown"));
+    GtkAdjustment* speed_spin_adj = GTK_ADJUSTMENT(gtk_builder_get_object (builder, "speed_spin_adj"));
 
     gtk_combo_box_text_remove_all(voices_ui);
     gtk_combo_box_text_remove_all(language_ui);
@@ -79,10 +84,22 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
     gtk_combo_box_set_active(GTK_COMBO_BOX(voices_ui), 1);
     gtk_combo_box_set_active(GTK_COMBO_BOX(language_ui), 10);
 
-    gtk_dialog_run(settings_dialog);
+    gint result = gtk_dialog_run(settings_dialog);
 
-    dyslexic_reader_set_voice(reader, voices[gtk_combo_box_get_active(GTK_COMBO_BOX(voices_ui))]);
-    dyslexic_reader_set_language(reader, languages[gtk_combo_box_get_active(GTK_COMBO_BOX(language_ui))]);
+    gtk_widget_hide (GTK_WIDGET(settings_dialog));
+
+    if (result == GTK_RESPONSE_OK)
+    {
+        const char* voice = voices[gtk_combo_box_get_active(GTK_COMBO_BOX(voices_ui))];
+        const char* language = languages[gtk_combo_box_get_active(GTK_COMBO_BOX(language_ui))];
+        double rate = gtk_adjustment_get_value (speed_spin_adj);
+
+        printf("Setting to \"%s\" in \"%s\" at %f\n", voice, language, rate);
+
+        dyslexic_reader_set_rate(reader, rate);
+        dyslexic_reader_set_voice(reader, voice);
+        dyslexic_reader_set_language(reader, language);
+    }
 }
 
 
