@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <gtkspell/gtkspell.h>
 #include "reader.h"
+#include "resources.h"
 
 
 GtkWidget   * read_btn     = NULL;
@@ -104,18 +105,15 @@ int main(int argc, char* argv[])
 {
     gtk_init (&argc, &argv);
 
-    builder = gtk_builder_new ();
+    GResource * res = resources_get_resource();
+
+    g_resources_register(res);
+
+    builder = gtk_builder_new_from_resource ("/ui.glade");
 
     if (!builder)
     {
         g_critical("GtkBuilder object allocation failed.");
-        return EXIT_FAILURE;
-    }
-
-    if (!gtk_builder_add_from_file (builder, "ui.glade", NULL))
-    {
-        g_critical("Dyslexic reader GtkBuilder failed to process file \"ui.glade\".");
-        g_object_unref(builder);
         return EXIT_FAILURE;
     }
 
