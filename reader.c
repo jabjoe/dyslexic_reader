@@ -12,7 +12,7 @@ struct dyslexic_reader_t
     GString       * marked_text;
     SPDConnection * speech_con;
     GtkTextBuffer * text_buffer;
-    bool            paused;
+    uint32_t        paused_pos;
     void          * userdata;
     GtkTextIter     speaking_start;
     GtkTextIter     speaking_end;
@@ -39,7 +39,9 @@ static void mark_up_text(dyslexic_reader_t *reader)
         if (!gtk_text_iter_forward_word_end(&end))
             gtk_text_iter_forward_to_end(&end);
 
-        g_string_append_printf(reader->marked_text, "<mark name=\"%i-%i\"/>", gtk_text_iter_get_offset(&start), gtk_text_iter_get_offset(&end));
+        uint32_t marked_pos = reader->marked_text->len;
+
+        g_string_append_printf(reader->marked_text, "<mark name=\"%i-%i-%u\"/>", gtk_text_iter_get_offset(&start), gtk_text_iter_get_offset(&end), marked_pos);
         g_string_append_printf(reader->marked_text, gtk_text_iter_get_visible_slice (&start, &end));
 
         if (!gtk_text_iter_is_end(&end))
@@ -54,12 +56,10 @@ static void mark_up_text(dyslexic_reader_t *reader)
         }
     }
     while(!gtk_text_iter_is_end(&start));
-
-    printf("Marked text: \"%s\"\n", reader->marked_text->str);
 }
 
 
-static void show_speaking(dyslexic_reader_t *reader, gint start, gint end)
+static void show_speaking(dyslexic_reader_t *reader, gint start, gint end, uint32_t mark_pos)
 {
     gtk_text_buffer_remove_tag(reader->text_buffer,
                                reader->speaking_tag,
@@ -74,7 +74,8 @@ static void show_speaking(dyslexic_reader_t *reader, gint start, gint end)
                               &reader->speaking_start,
                               &reader->speaking_end);
 
-    reading_updated(reader);
+    reading_updated(reader, &reader->speaking_start);
+    reader->paused_pos = mark_pos;
 }
 
 
@@ -84,15 +85,16 @@ static void speech_im_cb(size_t msg_id, size_t client_id, SPDNotificationType st
     if (index_mark)
     {
         gint i,j;
+        uint32_t mark_pos;
         printf("index_mark: %s\n", index_mark);
-        sscanf(index_mark, "%i-%i", &i, &j);
-        show_speaking(dyslexic_reader_singleton, i, j);
+        sscanf(index_mark, "%i-%i-%u", &i, &j, &mark_pos);
+        show_speaking(dyslexic_reader_singleton, i, j, mark_pos);
     }
 }
 
 static void dyslexic_reader_stopping(dyslexic_reader_t* reader)
 {
-    reader->paused = false;
+    reader->paused_pos = -1;
     gtk_text_buffer_remove_tag(reader->text_buffer,
                                reader->speaking_tag,
                                &reader->speaking_start,
@@ -133,7 +135,7 @@ dyslexic_reader_t *dyslexic_reader_create(GtkTextBuffer * text_buffer)
     }
 
     reader->text_buffer = text_buffer;
-    reader->paused = false;
+    reader->paused_pos = -1;
     reader->userdata = NULL;
     reader->languages = NULL;
 
@@ -182,8 +184,13 @@ void dyslexic_reader_destroy(dyslexic_reader_t* reader)
 
 bool dyslexic_reader_start_read(dyslexic_reader_t* reader)
 {
-    if (reader->paused)
-        return (spd_resume(reader->speech_con) == 0);
+    if (reader->paused_pos != -1)
+    {
+        int msg_id = spd_say(reader->speech_con, SPD_TEXT, reader->marked_text->str + reader->paused_pos);
+        printf("msg_id:%i (pos:%u)\n", msg_id, reader->paused_pos);
+        if (msg_id > 0)
+            return true;
+    }
     else
     {
         mark_up_text(reader);
@@ -204,12 +211,7 @@ bool dyslexic_reader_start_read(dyslexic_reader_t* reader)
 
 bool dyslexic_reader_start_pause(dyslexic_reader_t* reader)
 {
-    if (spd_pause(reader->speech_con) == 0)
-    {
-        reader->paused = true;
-        return true;
-    }
-    return false;
+    return (!spd_stop(reader->speech_con));
 }
 
 

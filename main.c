@@ -10,6 +10,8 @@ GtkWidget   * settings_btn = NULL;
 GtkWidget   * main_window  = NULL;
 GtkTextView * text_view    = NULL;
 GtkBuilder  * builder      = NULL;
+GtkScrolledWindow * scroll_area = NULL;
+
 
 extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
 {
@@ -112,7 +114,7 @@ void reading_stopped(dyslexic_reader_t *reader)
 }
 
 
-void reading_updated(dyslexic_reader_t* reader)
+void reading_updated(dyslexic_reader_t* reader, GtkTextIter* start)
 {
     gtk_widget_show_all(GTK_WIDGET(text_view));
 }
@@ -153,8 +155,9 @@ int main(int argc, char* argv[])
     pause_btn    = GTK_WIDGET (gtk_builder_get_object (builder, "pause_btn"));
     settings_btn = GTK_WIDGET (gtk_builder_get_object (builder, "settings_btn"));
     text_view = GTK_TEXT_VIEW (gtk_builder_get_object (builder, "text_view"));
+    scroll_area = GTK_SCROLLED_WINDOW (gtk_builder_get_object (builder, "scrolledwindow1"));
 
-    if (!read_btn || !pause_btn || !text_view || !settings_btn)
+    if (!read_btn || !pause_btn || !text_view || !settings_btn || !scroll_area)
     {
         g_critical("Dyslexic reader has not found are required widgets from GtkBuilder.");
         g_object_unref(builder);
