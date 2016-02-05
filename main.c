@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <gtkspell/gtkspell.h>
 #include <glib-unix.h>
+#include <string.h>
+#include <errno.h>
+
 #include "reader.h"
 #include "resources.h"
 
@@ -137,20 +140,56 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
 }
 
 
+static void safe_write(int fd, void* data, size_t len)
+{
+    int written = 0;
+    while(written < len)
+    {
+        int r = write(fd, data + written, len - written);
+        if (r == -1)
+        {
+            if (errno != EAGAIN && errno != EINTR)
+                continue;
+            fprintf(stderr, "Safe write failed : %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        else written += r;
+    }
+}
+
+
+static void safe_read(int fd, void* data, size_t len)
+{
+    int read_bytes = 0;
+    while(read_bytes < len)
+    {
+        int r = read(fd, data + read_bytes, len - read_bytes);
+        if (r == -1)
+        {
+            if (errno != EAGAIN && errno != EINTR)
+                continue;
+            fprintf(stderr, "Safe read failed : %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        else read_bytes += r;
+    }
+}
+
+
 void reading_stopped(dyslexic_reader_t *reader)
 {
     uint start = -1;
     uint end = -1;
 
-    write(pipe_ipc[1], &start, sizeof(start));
-    write(pipe_ipc[1], &end, sizeof(end));
+    safe_write(pipe_ipc[1], &start, sizeof(start));
+    safe_write(pipe_ipc[1], &end, sizeof(end));
 }
 
 
 void reading_updated(dyslexic_reader_t* reader, uint start, uint end)
 {
-    write(pipe_ipc[1], &start, sizeof(start));
-    write(pipe_ipc[1], &end, sizeof(end));
+    safe_write(pipe_ipc[1], &start, sizeof(start));
+    safe_write(pipe_ipc[1], &end, sizeof(end));
 }
 
 
@@ -160,8 +199,8 @@ gboolean ipc_pipe_update_cb(gint fd,
 {
     uint start, end;
 
-    read(fd, &start, sizeof(start));
-    read(fd, &end, sizeof(end));
+    safe_read(fd, &start, sizeof(start));
+    safe_read(fd, &end, sizeof(end));
 
     if (start == -1 && end == -1)
     {
