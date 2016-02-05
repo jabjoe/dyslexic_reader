@@ -50,8 +50,8 @@ static void mark_up_text(dyslexic_reader_t *reader, const char* text_start, cons
 
             uint marked_pos = (uint)reader->marked_text->len;
 
-            g_string_append_printf(reader->marked_text, "<mark name=\"%u-%u-%u\"/>", (uintptr_t)(word_start) - ((uintptr_t)text_start), (uintptr_t)(word_end) - ((uintptr_t)text_start), marked_pos);
-            g_string_append_printf(reader->marked_text, "%.*s", (uintptr_t)(word_end) - ((uintptr_t)word_start), word_start);
+            g_string_append_printf(reader->marked_text, "<mark name=\"%u-%u-%u\"/>", (uint)((uintptr_t)(word_start) - ((uintptr_t)text_start)), (uint)((uintptr_t)(word_end) - ((uintptr_t)text_start)), marked_pos);
+            g_string_append_printf(reader->marked_text, "%.*s", (int)((uintptr_t)(word_end) - ((uintptr_t)word_start)), word_start);
             text = word_end;
         }
         else break;

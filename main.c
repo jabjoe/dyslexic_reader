@@ -158,7 +158,6 @@ gboolean ipc_pipe_update_cb(gint fd,
                           GIOCondition condition,
                           gpointer user_data)
 {
-    dyslexic_reader_t* reader = (dyslexic_reader_t*)user_data;
     uint start, end;
 
     read(fd, &start, sizeof(start));
