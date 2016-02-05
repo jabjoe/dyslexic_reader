@@ -191,6 +191,12 @@ gboolean ipc_pipe_update_cb(gint fd,
                                   &speaking_start,
                                   &speaking_end);
 
+        GtkTextIter iter;
+
+        gtk_text_buffer_get_iter_at_offset(gtk_text_view_get_buffer(text_view), &iter, end);
+
+        gtk_text_view_scroll_to_iter(text_view, &iter, 0, FALSE, 0, 0);
+
         gtk_widget_show_all(GTK_WIDGET(text_view));
     }
 }
