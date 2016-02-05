@@ -10,7 +10,12 @@ GtkWidget   * settings_btn = NULL;
 GtkWidget   * main_window  = NULL;
 GtkTextView * text_view    = NULL;
 GtkBuilder  * builder      = NULL;
+GtkTextBuffer     * text_buffer = NULL;
+GtkTextTag        * speaking_tag;
 GtkScrolledWindow * scroll_area = NULL;
+
+GtkTextIter     speaking_start;
+GtkTextIter     speaking_end;
 
 
 extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
@@ -28,6 +33,8 @@ extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
     }
     else if (dyslexic_reader_start_read(reader))
     {
+        gtk_text_buffer_get_iter_at_offset(text_buffer, &speaking_start, 0);
+        gtk_text_buffer_get_iter_at_offset(text_buffer, &speaking_end, 0);
         gtk_text_view_set_editable (text_view, FALSE);
         gtk_widget_hide(read_btn);
         gtk_widget_show_all(pause_btn);
@@ -116,6 +123,11 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
 
 void reading_stopped(dyslexic_reader_t *reader)
 {
+    gtk_text_buffer_remove_tag(text_buffer,
+                               speaking_tag,
+                               &speaking_start,
+                               &speaking_end);
+
     gtk_widget_hide(pause_btn);
     gtk_widget_show_all(read_btn);
     gtk_text_view_set_editable (text_view, TRUE);
@@ -123,8 +135,21 @@ void reading_stopped(dyslexic_reader_t *reader)
 }
 
 
-void reading_updated(dyslexic_reader_t* reader, GtkTextIter* start)
+void reading_updated(dyslexic_reader_t* reader, uint start, uint end)
 {
+    gtk_text_buffer_remove_tag(text_buffer,
+                               speaking_tag,
+                               &speaking_start,
+                               &speaking_end);
+
+    gtk_text_iter_set_offset(&speaking_start, start);
+    gtk_text_iter_set_offset(&speaking_end, end);
+
+    gtk_text_buffer_apply_tag(text_buffer,
+                              speaking_tag,
+                              &speaking_start,
+                              &speaking_end);
+
     gtk_widget_show_all(GTK_WIDGET(text_view));
 }
 
@@ -152,10 +177,18 @@ int main(int argc, char* argv[])
         g_object_unref(builder);
         return EXIT_FAILURE;
     }
-    GtkTextBuffer * text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (builder, "text_buffer"));
+    text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (builder, "text_buffer"));
     if (!text_buffer)
     {
         g_critical("Dyslexic reader requires \"text_buffer\" from GtkBuilder.");
+        g_object_unref(builder);
+        return EXIT_FAILURE;
+    }
+
+    speaking_tag = gtk_text_buffer_create_tag(text_buffer, "speaking", "background", "black", "foreground", "white", NULL);
+    if (!speaking_tag)
+    {
+        g_critical("Dyslexic reader failed to create speaking tag.");
         g_object_unref(builder);
         return EXIT_FAILURE;
     }

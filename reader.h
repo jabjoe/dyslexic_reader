@@ -24,7 +24,7 @@ extern bool                dyslexic_reader_set_language(dyslexic_reader_t* reade
 
 //Externally defined.
 extern void                reading_stopped(dyslexic_reader_t* reader);
-extern void                reading_updated(dyslexic_reader_t* reader, GtkTextIter* start);
+extern void                reading_updated(dyslexic_reader_t* reader, uint start, uint end);
 
 
 #endif //__DYSLEXIC_READER__
