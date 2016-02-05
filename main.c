@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <gtkspell/gtkspell.h>
+#include <glib-unix.h>
 #include "reader.h"
 #include "resources.h"
 
