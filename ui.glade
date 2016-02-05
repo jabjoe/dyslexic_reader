@@ -86,7 +86,7 @@
             </child>
             <child>
               <object class="GtkButton" id="pause_btn">
-                <property name="label" translatable="yes">button</property>
+                <property name="label" translatable="yes">pause</property>
                 <property name="width_request">96</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
