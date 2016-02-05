@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
 #include <assert.h>
 #include <string.h>
 #include <libspeechd.h>
@@ -22,37 +24,39 @@ static dyslexic_reader_t * dyslexic_reader_singleton = NULL;
 
 static void mark_up_text(dyslexic_reader_t *reader)
 {
-    char mark_buf[32];
     GtkTextIter start, end;
 
     g_string_truncate(reader->marked_text, 0);
 
     gtk_text_buffer_get_iter_at_offset (reader->text_buffer, &start, 0);
+    gtk_text_buffer_get_iter_at_offset (reader->text_buffer, &end, -1);
 
-    do
+    const char* text_start = gtk_text_buffer_get_text(reader->text_buffer, &start, &end, FALSE);
+    const char* text_end = text_start + gtk_text_iter_get_offset(&end);
+    const char* text = text_start;
+
+    while(text < text_end)
     {
-        gtk_text_iter_assign(&end, &start);
+        const char* word_start = text;
 
-        if (!gtk_text_iter_forward_word_end(&end))
-            gtk_text_iter_forward_to_end(&end);
+        while(word_start < text_end && (isspace(*word_start) || ispunct(*word_start)))
+            word_start++;
 
-        uint marked_pos = (uint)reader->marked_text->len;
-
-        g_string_append_printf(reader->marked_text, "<mark name=\"%u-%u-%u\"/>", (uint)gtk_text_iter_get_offset(&start), (uint)gtk_text_iter_get_offset(&end), marked_pos);
-        g_string_append_printf(reader->marked_text, gtk_text_iter_get_visible_slice (&start, &end));
-
-        if (!gtk_text_iter_is_end(&end))
+        if (word_start < text_end)
         {
-            GtkTextIter gap;
-            gtk_text_iter_assign(&start, &end);
-            gtk_text_iter_assign(&gap, &end);
+            const char* word_end = word_start;
 
-            while(gtk_text_iter_forward_char(&start) && !gtk_text_iter_starts_word(&start));
+            while(word_end < text_end && (isalnum(*word_end) || ispunct(*word_end)))
+                word_end++;
 
-            g_string_append_printf(reader->marked_text, gtk_text_iter_get_visible_slice (&gap, &start));
+            uint marked_pos = (uint)reader->marked_text->len;
+
+            g_string_append_printf(reader->marked_text, "<mark name=\"%u-%u-%u\"/>", (uintptr_t)(word_start) - ((uintptr_t)text_start), (uintptr_t)(word_end) - ((uintptr_t)text_start), marked_pos);
+            g_string_append_printf(reader->marked_text, "%.*s", (uintptr_t)(word_end) - ((uintptr_t)word_start), word_start);
+            text = word_end;
         }
+        else break;
     }
-    while(!gtk_text_iter_is_end(&start));
 }
 
 
