@@ -13,7 +13,6 @@ struct dyslexic_reader_t
 {
     GString       * marked_text;
     SPDConnection * speech_con;
-    GtkTextBuffer * text_buffer;
     uint32_t        paused_pos;
     void          * userdata;
     char         ** languages;
@@ -22,17 +21,10 @@ struct dyslexic_reader_t
 static dyslexic_reader_t * dyslexic_reader_singleton = NULL;
 
 
-static void mark_up_text(dyslexic_reader_t *reader)
+static void mark_up_text(dyslexic_reader_t *reader, const char* text_start, const char* text_end)
 {
-    GtkTextIter start, end;
-
     g_string_truncate(reader->marked_text, 0);
 
-    gtk_text_buffer_get_iter_at_offset (reader->text_buffer, &start, 0);
-    gtk_text_buffer_get_iter_at_offset (reader->text_buffer, &end, -1);
-
-    const char* text_start = gtk_text_buffer_get_text(reader->text_buffer, &start, &end, FALSE);
-    const char* text_end = text_start + gtk_text_iter_get_offset(&end);
     const char* text = text_start;
 
     while(text < text_end)
@@ -92,10 +84,8 @@ static void speech_end_cb(size_t msg_id, size_t client_id, SPDNotificationType s
 }
 
 
-dyslexic_reader_t *dyslexic_reader_create(GtkTextBuffer * text_buffer)
+dyslexic_reader_t *dyslexic_reader_create()
 {
-    assert(text_buffer);
-
     if (dyslexic_reader_singleton)
     {
         g_critical("Dyslexic reader singleton already set.");
@@ -117,7 +107,6 @@ dyslexic_reader_t *dyslexic_reader_create(GtkTextBuffer * text_buffer)
         return NULL;
     }
 
-    reader->text_buffer = text_buffer;
     reader->paused_pos = -1;
     reader->userdata = NULL;
     reader->languages = NULL;
@@ -157,10 +146,10 @@ void dyslexic_reader_destroy(dyslexic_reader_t* reader)
 }
 
 
-bool dyslexic_reader_start_read(dyslexic_reader_t* reader)
+bool dyslexic_reader_start_read(dyslexic_reader_t* reader, const char* text_start, const char* text_end)
 {
     reader->paused_pos = -1;
-    mark_up_text(reader);
+    mark_up_text(reader, text_start, text_end);
     if (reader->marked_text->len)
     {
         int msg_id = spd_say(reader->speech_con, SPD_TEXT, reader->marked_text->str);

@@ -31,14 +31,25 @@ extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
         }
         else dyslexic_reader_start_stop(reader);
     }
-    else if (dyslexic_reader_start_read(reader))
+    else
     {
-        gtk_text_buffer_get_iter_at_offset(text_buffer, &speaking_start, 0);
-        gtk_text_buffer_get_iter_at_offset(text_buffer, &speaking_end, 0);
-        gtk_text_view_set_editable (text_view, FALSE);
-        gtk_widget_hide(read_btn);
-        gtk_widget_show_all(pause_btn);
-        gtk_widget_set_sensitive(settings_btn, FALSE);
+        GtkTextIter start, end;
+
+        gtk_text_buffer_get_iter_at_offset (text_buffer, &start, 0);
+        gtk_text_buffer_get_iter_at_offset (text_buffer, &end, -1);
+
+        const char* text_start = gtk_text_buffer_get_text(text_buffer, &start, &end, FALSE);
+        const char* text_end = text_start + gtk_text_iter_get_offset(&end);
+
+        if (dyslexic_reader_start_read(reader, text_start, text_end))
+        {
+            gtk_text_buffer_get_iter_at_offset(text_buffer, &speaking_start, 0);
+            gtk_text_buffer_get_iter_at_offset(text_buffer, &speaking_end, 0);
+            gtk_text_view_set_editable (text_view, FALSE);
+            gtk_widget_hide(read_btn);
+            gtk_widget_show_all(pause_btn);
+            gtk_widget_set_sensitive(settings_btn, FALSE);
+        }
     }
 }
 
@@ -219,7 +230,7 @@ int main(int argc, char* argv[])
     gtk_builder_connect_signals (builder, NULL);
 
 
-    dyslexic_reader_t* reader = dyslexic_reader_create(text_buffer);
+    dyslexic_reader_t* reader = dyslexic_reader_create();
 
     if (reader)
     {
