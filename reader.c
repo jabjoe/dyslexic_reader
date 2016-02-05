@@ -140,15 +140,16 @@ dyslexic_reader_t *dyslexic_reader_create(GtkTextBuffer * text_buffer)
 
 void dyslexic_reader_destroy(dyslexic_reader_t* reader)
 {
-   spd_close(reader->speech_con);
-   if (reader->languages)
-   {
-       char ** p = reader->languages;
-       while(*p)
-           free(*p++);
-       free(reader->languages);
-   }
-   free(reader);
+    spd_stop(reader->speech_con);
+    spd_close(reader->speech_con);
+    if (reader->languages)
+    {
+        char ** p = reader->languages;
+        while(*p)
+            free(*p++);
+        free(reader->languages);
+    }
+    free(reader);
 }
 
 
