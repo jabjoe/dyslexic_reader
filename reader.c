@@ -184,34 +184,41 @@ void dyslexic_reader_destroy(dyslexic_reader_t* reader)
 
 bool dyslexic_reader_start_read(dyslexic_reader_t* reader)
 {
-    if (reader->paused_pos != -1)
+    reader->paused_pos = -1;
+    mark_up_text(reader);
+    if (reader->marked_text->len)
     {
-        int msg_id = spd_say(reader->speech_con, SPD_TEXT, reader->marked_text->str + reader->paused_pos);
-        printf("msg_id:%i (pos:%u)\n", msg_id, reader->paused_pos);
+        gtk_text_buffer_get_iter_at_offset(reader->text_buffer, &reader->speaking_start, 0);
+        gtk_text_buffer_get_iter_at_offset(reader->text_buffer, &reader->speaking_end, 0);
+
+        int msg_id = spd_say(reader->speech_con, SPD_TEXT, reader->marked_text->str);
+        printf("msg_id:%i\n", msg_id);
         if (msg_id > 0)
             return true;
     }
-    else
-    {
-        mark_up_text(reader);
-        if (reader->marked_text->len)
-        {
-            gtk_text_buffer_get_iter_at_offset(reader->text_buffer, &reader->speaking_start, 0);
-            gtk_text_buffer_get_iter_at_offset(reader->text_buffer, &reader->speaking_end, 0);
-
-            int msg_id = spd_say(reader->speech_con, SPD_TEXT, reader->marked_text->str);
-            printf("msg_id:%i\n", msg_id);
-            if (msg_id > 0)
-                return true;
-        }
-        return false;
-    }
+    return false;
 }
 
 
 bool dyslexic_reader_start_pause(dyslexic_reader_t* reader)
 {
     return (!spd_stop(reader->speech_con));
+}
+
+
+bool                dyslexic_reader_is_paused(dyslexic_reader_t* reader)
+{
+    return reader->paused_pos != -1;
+}
+
+
+bool dyslexic_reader_continue(dyslexic_reader_t* reader)
+{
+    if (reader->paused_pos == -1)
+        return false;
+    int msg_id = spd_say(reader->speech_con, SPD_TEXT, reader->marked_text->str + reader->paused_pos);
+    printf("msg_id:%i (pos:%u)\n", msg_id, reader->paused_pos);
+    return (msg_id > 0);
 }
 
 

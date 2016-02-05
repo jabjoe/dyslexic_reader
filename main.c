@@ -17,7 +17,16 @@ extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
 {
     dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(user_data), "reader");
 
-    if (dyslexic_reader_start_read(reader))
+    if (dyslexic_reader_is_paused(reader))
+    {
+        if (dyslexic_reader_continue(reader))
+        {
+            gtk_widget_hide(read_btn);
+            gtk_widget_show_all(pause_btn);
+        }
+        else dyslexic_reader_start_stop(reader);
+    }
+    else if (dyslexic_reader_start_read(reader))
     {
         gtk_text_view_set_editable (text_view, FALSE);
         gtk_widget_hide(read_btn);

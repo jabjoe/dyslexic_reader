@@ -10,6 +10,8 @@ extern dyslexic_reader_t * dyslexic_reader_create(GtkTextBuffer * text_buffer);
 extern void                dyslexic_reader_destroy(dyslexic_reader_t* reader);
 extern bool                dyslexic_reader_start_read(dyslexic_reader_t* reader);
 extern bool                dyslexic_reader_start_pause(dyslexic_reader_t* reader);
+extern bool                dyslexic_reader_is_paused(dyslexic_reader_t* reader);
+extern bool                dyslexic_reader_continue(dyslexic_reader_t* reader);
 extern bool                dyslexic_reader_start_stop(dyslexic_reader_t* reader);
 
 extern void                dyslexic_reader_set_rate(dyslexic_reader_t* reader, double rate);
