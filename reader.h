@@ -2,7 +2,6 @@
 #define __DYSLEXIC_READER__
 
 #include <stdbool.h>
-#include <gtk/gtk.h>
 
 typedef struct dyslexic_reader_t dyslexic_reader_t;
 

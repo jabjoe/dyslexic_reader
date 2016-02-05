@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <string.h>
 #include <libspeechd.h>
+#include <glib.h>
 
 #include "reader.h"
 
