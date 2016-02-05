@@ -32,7 +32,7 @@ static void mark_up_text(dyslexic_reader_t *reader, const char* text_start, cons
     {
         const char* word_start = text;
 
-        while(word_start < text_end && (isspace(*word_start) || ispunct(*word_start)))
+        while(word_start < text_end && (isspace(*word_start) || ispunct(*word_start) || iscntrl(*word_start)))
             word_start++;
 
         if (word_start < text_end)
@@ -41,6 +41,12 @@ static void mark_up_text(dyslexic_reader_t *reader, const char* text_start, cons
 
             while(word_end < text_end && (isalnum(*word_end) || ispunct(*word_end)))
                 word_end++;
+
+            if (word_end == word_start)
+            {
+                text++;
+                continue;
+            }
 
             uint marked_pos = (uint)reader->marked_text->len;
 
