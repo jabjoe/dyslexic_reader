@@ -18,6 +18,10 @@ GtkTextIter     speaking_start;
 GtkTextIter     speaking_end;
 
 
+static int pipe_ipc[2];
+
+
+
 extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
 {
     dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(user_data), "reader");
@@ -134,34 +138,60 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
 
 void reading_stopped(dyslexic_reader_t *reader)
 {
-    gtk_text_buffer_remove_tag(text_buffer,
-                               speaking_tag,
-                               &speaking_start,
-                               &speaking_end);
+    uint start = -1;
+    uint end = -1;
 
-    gtk_widget_hide(pause_btn);
-    gtk_widget_show_all(read_btn);
-    gtk_text_view_set_editable (text_view, TRUE);
-    gtk_widget_set_sensitive(settings_btn, TRUE);
+    write(pipe_ipc[1], &start, sizeof(start));
+    write(pipe_ipc[1], &end, sizeof(end));
 }
 
 
 void reading_updated(dyslexic_reader_t* reader, uint start, uint end)
 {
-    gtk_text_buffer_remove_tag(text_buffer,
+    write(pipe_ipc[1], &start, sizeof(start));
+    write(pipe_ipc[1], &end, sizeof(end));
+}
+
+
+gboolean ipc_pipe_update_cb(gint fd,
+                          GIOCondition condition,
+                          gpointer user_data)
+{
+    dyslexic_reader_t* reader = (dyslexic_reader_t*)user_data;
+    uint start, end;
+
+    read(fd, &start, sizeof(start));
+    read(fd, &end, sizeof(end));
+
+    if (start == -1 && end == -1)
+    {
+        gtk_text_buffer_remove_tag(text_buffer,
                                speaking_tag,
                                &speaking_start,
                                &speaking_end);
 
-    gtk_text_iter_set_offset(&speaking_start, start);
-    gtk_text_iter_set_offset(&speaking_end, end);
+        gtk_widget_hide(pause_btn);
+        gtk_widget_show_all(read_btn);
+        gtk_text_view_set_editable (text_view, TRUE);
+        gtk_widget_set_sensitive(settings_btn, TRUE);
+    }
+    else
+    {
+        gtk_text_buffer_remove_tag(text_buffer,
+                                   speaking_tag,
+                                   &speaking_start,
+                                   &speaking_end);
 
-    gtk_text_buffer_apply_tag(text_buffer,
-                              speaking_tag,
-                              &speaking_start,
-                              &speaking_end);
+        gtk_text_iter_set_offset(&speaking_start, start);
+        gtk_text_iter_set_offset(&speaking_end, end);
 
-    gtk_widget_show_all(GTK_WIDGET(text_view));
+        gtk_text_buffer_apply_tag(text_buffer,
+                                  speaking_tag,
+                                  &speaking_start,
+                                  &speaking_end);
+
+        gtk_widget_show_all(GTK_WIDGET(text_view));
+    }
 }
 
 
@@ -229,11 +259,19 @@ int main(int argc, char* argv[])
 
     gtk_builder_connect_signals (builder, NULL);
 
+    if (pipe(pipe_ipc) != 0)
+    {
+        g_critical("Dyslexic reader failed to set up IPC pipe");
+        g_object_unref(builder);
+        return EXIT_FAILURE;
+    }
 
     dyslexic_reader_t* reader = dyslexic_reader_create();
 
     if (reader)
     {
+        g_unix_fd_add(pipe_ipc[0], G_IO_IN, ipc_pipe_update_cb, reader);
+
         g_object_set_data(G_OBJECT(main_window), "reader", reader);
         g_object_set_data(G_OBJECT(main_window), "spellcheck", spellcheck);
         gtk_widget_show (main_window);
