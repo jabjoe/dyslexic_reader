@@ -199,6 +199,7 @@ gboolean ipc_pipe_update_cb(gint fd,
 
         gtk_widget_show_all(GTK_WIDGET(text_view));
     }
+    return TRUE;
 }
 
 
