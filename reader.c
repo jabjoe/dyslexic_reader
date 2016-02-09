@@ -280,6 +280,7 @@ const char* const*  dyslexic_reader_list_languages(dyslexic_reader_t* reader)
     }
 
     *languages_pos2 = NULL;
+    *langs_short_pos = NULL;
     return (const char* const*)reader->languages;
 }
 
