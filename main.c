@@ -298,7 +298,22 @@ gboolean ipc_pipe_update_cb(gint fd,
 
         gtk_text_buffer_get_iter_at_offset(gtk_text_view_get_buffer(text_view), &iter, end);
 
-        gtk_text_view_scroll_to_iter(text_view, &iter, 0, FALSE, 0, 0);
+        GdkRectangle rect = {0};
+
+        gtk_text_view_get_iter_location(text_view, &iter, &rect);
+
+        GtkAdjustment * adj = gtk_scrollable_get_vadjustment (GTK_SCROLLABLE(text_view));
+
+        if (adj)
+        {
+            gdouble half_page = gtk_adjustment_get_page_size (adj) / 2;
+            gdouble value     = gtk_adjustment_get_value (adj);
+
+            if ((rect.y + rect.height) > (value + half_page))
+                gtk_adjustment_set_value(adj, MIN(value+half_page/2, gtk_adjustment_get_upper(adj)));
+            else if (rect.y < value)
+                gtk_adjustment_set_value(adj, rect.y);
+        }
 
         gtk_widget_show_all(GTK_WIDGET(text_view));
     }
