@@ -11,6 +11,7 @@
 
 GtkWidget   * read_btn     = NULL;
 GtkWidget   * pause_btn    = NULL;
+GtkWidget   * stop_btn     = NULL;
 GtkWidget   * settings_btn = NULL;
 GtkWidget   * main_window  = NULL;
 GtkTextView * text_view    = NULL;
@@ -78,6 +79,7 @@ extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
             gtk_widget_hide(read_btn);
             gtk_widget_show_all(pause_btn);
             gtk_widget_set_sensitive(settings_btn, FALSE);
+            gtk_widget_set_sensitive(stop_btn, TRUE);
         }
     }
 }
@@ -284,6 +286,7 @@ gboolean ipc_pipe_update_cb(gint fd,
         gtk_widget_show_all(read_btn);
         gtk_text_view_set_editable (text_view, TRUE);
         gtk_widget_set_sensitive(settings_btn, TRUE);
+        gtk_widget_set_sensitive(stop_btn, FALSE);
     }
     else
     {
@@ -352,6 +355,7 @@ int main(int argc, char* argv[])
 
     read_btn     = GTK_WIDGET (gtk_builder_get_object (builder, "read_btn"));
     pause_btn    = GTK_WIDGET (gtk_builder_get_object (builder, "pause_btn"));
+    stop_btn     = GTK_WIDGET (gtk_builder_get_object (builder, "stop_btn"));
     settings_btn = GTK_WIDGET (gtk_builder_get_object (builder, "settings_btn"));
     text_view = GTK_TEXT_VIEW (gtk_builder_get_object (builder, "text_view"));
     scroll_area = GTK_SCROLLED_WINDOW (gtk_builder_get_object (builder, "scrolledwindow1"));

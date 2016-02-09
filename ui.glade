@@ -128,6 +128,7 @@
                 <property name="label" translatable="yes">Stop</property>
                 <property name="width_request">96</property>
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="tooltip_text" translatable="yes">ctrl-o</property>
