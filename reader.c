@@ -17,6 +17,7 @@ struct dyslexic_reader_t
     uint32_t        paused_pos;
     void          * userdata;
     char         ** languages;
+    char         ** langs_short;
 };
 
 static dyslexic_reader_t * dyslexic_reader_singleton = NULL;
@@ -72,7 +73,6 @@ static void speech_im_cb(size_t msg_id, size_t client_id, SPDNotificationType st
     if (index_mark)
     {
         uint i,j, mark_pos;
-        printf("index_mark: %s\n", index_mark);
         sscanf(index_mark, "%u-%u-%u", &i, &j, &mark_pos);
         show_speaking(dyslexic_reader_singleton, i, j, mark_pos);
     }
@@ -117,6 +117,7 @@ dyslexic_reader_t *dyslexic_reader_create()
     reader->paused_pos = -1;
     reader->userdata = NULL;
     reader->languages = NULL;
+    reader->langs_short = NULL;
 
     reader->speech_con  = spd_open("dyslexic_reader", NULL, NULL, SPD_MODE_THREADED);
     if (!reader->speech_con)
@@ -148,6 +149,13 @@ void dyslexic_reader_destroy(dyslexic_reader_t* reader)
         while(*p)
             free(*p++);
         free(reader->languages);
+    }
+    if (reader->langs_short)
+    {
+        char ** p = reader->langs_short;
+        while(*p)
+            free(*p++);
+        free(reader->langs_short);
     }
     free(reader);
 }
@@ -244,14 +252,26 @@ const char* const*  dyslexic_reader_list_languages(dyslexic_reader_t* reader)
         count++;
 
     reader->languages = (char**)malloc(sizeof(char*)*count);
+    reader->langs_short = (char**)malloc(sizeof(char*)*count);
     char** languages_pos2 = reader->languages;
+    char** langs_short_pos = reader->langs_short;
     languages_pos = languages;
 
     for(;*languages_pos;languages_pos++)
+    {
         *languages_pos2++ = strdup((*languages_pos)->name);
+        *langs_short_pos++ = strdup((*languages_pos)->language);
+    }
 
     *languages_pos2 = NULL;
     return (const char* const*)reader->languages;
+}
+
+
+const char* const*  dyslexic_reader_list_languages_short(dyslexic_reader_t* reader)
+{
+    dyslexic_reader_list_languages(reader);
+    return (const char* const*)reader->langs_short;
 }
 
 
@@ -261,7 +281,7 @@ bool                dyslexic_reader_set_language(dyslexic_reader_t* reader, cons
     SPDVoice** languages_pos = languages;
 
     for(;*languages_pos;languages_pos++)
-        if (!strcmp((*languages_pos)->name, language))
+        if (!strcmp((*languages_pos)->name, language) || !strcmp((*languages_pos)->language, language))
             if (!spd_set_language(reader->speech_con, (*languages_pos)->language))
                 return true;
     return false;

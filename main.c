@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <gtkspell/gtkspell.h>
 #include <glib-unix.h>
+#include <gio/gio.h>
 #include <string.h>
 #include <errno.h>
 
@@ -23,6 +24,16 @@ GtkTextIter     speaking_end;
 
 
 static int pipe_ipc[2];
+
+
+typedef struct
+{
+    const char* voice;
+    const char* language;
+    double rate;
+} Settings;
+
+Settings settings;
 
 
 
@@ -94,10 +105,59 @@ extern void settings_cancel_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_
 }
 
 
-extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog )
+static void update_settings()
 {
     dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(main_window), "reader");
     GtkSpellChecker *spellcheck = (GtkSpellChecker*) g_object_get_data(G_OBJECT(main_window), "spellcheck");
+
+    printf("Setting to \"%s\" in \"%s\" at %f\n", settings.voice, settings.language, settings.rate);
+
+    const char* const * long_langs = dyslexic_reader_list_languages(reader);
+    const char* const * short_langs = dyslexic_reader_list_languages_short(reader);
+
+    for(int n=0; long_langs[n]; ++n)
+        if (!strcmp(long_langs[n], settings.language))
+            gtk_spell_checker_set_language (spellcheck, short_langs[n], NULL);
+
+    dyslexic_reader_set_rate(reader, settings.rate);
+    dyslexic_reader_set_voice(reader, settings.voice);
+    dyslexic_reader_set_language(reader, settings.language);
+}
+
+
+static void load_settings()
+{
+    GSettings * gsettings = g_settings_new("org.dyslexicreader");
+    if (gsettings)
+    {
+        settings.rate       = g_settings_get_double(gsettings, "rate");
+        settings.voice      = g_settings_get_string(gsettings, "voice");
+        settings.language   = g_settings_get_string(gsettings, "language");
+    }
+    g_object_unref(G_OBJECT(gsettings));
+    update_settings();
+}
+
+
+static void save_settings()
+{
+    GSettings * gsettings = g_settings_new("org.dyslexicreader");
+    if (gsettings)
+    {
+        g_settings_set_double(gsettings, "rate", settings.rate);
+        g_settings_set_string(gsettings, "voice", settings.voice);
+        g_settings_set_string(gsettings, "language", settings.language);
+        g_settings_sync();
+    }
+    g_object_unref(G_OBJECT(gsettings));
+}
+
+
+
+
+extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog )
+{
+    dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(main_window), "reader");
 
     GtkComboBoxText* voices_ui = GTK_COMBO_BOX_TEXT (gtk_builder_get_object (builder, "voice_dropdown"));
     GtkComboBoxText* language_ui = GTK_COMBO_BOX_TEXT (gtk_builder_get_object (builder, "language_dropdown"));
@@ -109,17 +169,23 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
     const char* const * voices = dyslexic_reader_list_voices(reader);
     const char* const * p = voices;
 
-    while(*p)
-        gtk_combo_box_text_append_text(voices_ui,  *p++);
+    for(;*p; p++)
+    {
+        gtk_combo_box_text_append_text(voices_ui,  *p);
+        if (settings.voice && !strcmp(*p, settings.voice))
+            gtk_combo_box_set_active(GTK_COMBO_BOX(voices_ui), p - voices);
+    }
 
     const char* const * languages = dyslexic_reader_list_languages(reader);
-    p = languages;
 
-    while(*p)
-        gtk_combo_box_text_append_text(language_ui,  *p++);
+    for(int n = 0; languages[n]; ++n)
+    {
+        gtk_combo_box_text_append_text(language_ui,  languages[n]);
+        if (settings.language && !strcmp(languages[n], settings.language))
+            gtk_combo_box_set_active(GTK_COMBO_BOX(language_ui), n);
+    }
 
-    gtk_combo_box_set_active(GTK_COMBO_BOX(voices_ui), 1);
-    gtk_combo_box_set_active(GTK_COMBO_BOX(language_ui), 10);
+    gtk_adjustment_set_value( speed_spin_adj, settings.rate);
 
     gint result = gtk_dialog_run(settings_dialog);
 
@@ -127,15 +193,14 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
 
     if (result == GTK_RESPONSE_OK)
     {
-        const char* voice = voices[gtk_combo_box_get_active(GTK_COMBO_BOX(voices_ui))];
-        const char* language = languages[gtk_combo_box_get_active(GTK_COMBO_BOX(language_ui))];
-        double rate = gtk_adjustment_get_value (speed_spin_adj);
+        uint lang_index = gtk_combo_box_get_active(GTK_COMBO_BOX(language_ui));
 
-        printf("Setting to \"%s\" in \"%s\" at %f\n", voice, language, rate);
+        settings.voice = voices[gtk_combo_box_get_active(GTK_COMBO_BOX(voices_ui))];
+        settings.language = languages[lang_index];
+        settings.rate = gtk_adjustment_get_value (speed_spin_adj);
 
-        dyslexic_reader_set_rate(reader, rate);
-        dyslexic_reader_set_voice(reader, voice);
-        dyslexic_reader_set_language(reader, language);
+        update_settings();
+        save_settings();
     }
 }
 
@@ -245,6 +310,8 @@ int main(int argc, char* argv[])
 {
     gtk_init (&argc, &argv);
 
+    memset(&settings, 0, sizeof(settings));
+
     GResource * res = resources_get_resource();
 
     g_resources_register(res);
@@ -320,6 +387,9 @@ int main(int argc, char* argv[])
 
         g_object_set_data(G_OBJECT(main_window), "reader", reader);
         g_object_set_data(G_OBJECT(main_window), "spellcheck", spellcheck);
+
+        load_settings();
+
         gtk_widget_show (main_window);
         gtk_main ();
         dyslexic_reader_destroy(reader);

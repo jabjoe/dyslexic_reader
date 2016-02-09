@@ -19,6 +19,7 @@ extern const char* const*  dyslexic_reader_list_voices(dyslexic_reader_t* reader
 extern bool                dyslexic_reader_set_voice(dyslexic_reader_t* reader, const char* voice);
 
 extern const char* const*  dyslexic_reader_list_languages(dyslexic_reader_t* reader);
+extern const char* const*  dyslexic_reader_list_languages_short(dyslexic_reader_t* reader);
 extern bool                dyslexic_reader_set_language(dyslexic_reader_t* reader, const char* language);
 
 //Externally defined.
