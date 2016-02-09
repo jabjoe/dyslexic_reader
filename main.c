@@ -16,7 +16,6 @@ GtkWidget   * main_window  = NULL;
 GtkTextView * text_view    = NULL;
 GtkBuilder  * builder      = NULL;
 GtkTextBuffer     * text_buffer = NULL;
-GtkTextTag        * speaking_tag;
 GtkScrolledWindow * scroll_area = NULL;
 
 GtkTextIter     speaking_start;
@@ -280,10 +279,6 @@ gboolean ipc_pipe_update_cb(gint fd,
 
     if (start == -1 && end == -1)
     {
-        gtk_text_buffer_remove_tag(text_buffer,
-                               speaking_tag,
-                               &speaking_start,
-                               &speaking_end);
 
         gtk_widget_hide(pause_btn);
         gtk_widget_show_all(read_btn);
@@ -292,26 +287,16 @@ gboolean ipc_pipe_update_cb(gint fd,
     }
     else
     {
-        gtk_text_buffer_remove_tag(text_buffer,
-                                   speaking_tag,
-                                   &speaking_start,
-                                   &speaking_end);
+
 
         gtk_text_iter_set_offset(&speaking_start, start);
         gtk_text_iter_set_offset(&speaking_end, end);
 
-        gtk_text_buffer_apply_tag(text_buffer,
-                                  speaking_tag,
-                                  &speaking_start,
-                                  &speaking_end);
-
-        GtkTextIter iter;
-
-        gtk_text_buffer_get_iter_at_offset(gtk_text_view_get_buffer(text_view), &iter, end);
+        gtk_text_buffer_select_range(gtk_text_view_get_buffer(text_view), &speaking_start, &speaking_end);
 
         GdkRectangle rect = {0};
 
-        gtk_text_view_get_iter_location(text_view, &iter, &rect);
+        gtk_text_view_get_iter_location(text_view, &speaking_end, &rect);
 
         GtkAdjustment * adj = gtk_scrollable_get_vadjustment (GTK_SCROLLABLE(text_view));
 
@@ -361,14 +346,6 @@ int main(int argc, char* argv[])
     if (!text_buffer)
     {
         g_critical("Dyslexic reader requires \"text_buffer\" from GtkBuilder.");
-        g_object_unref(builder);
-        return EXIT_FAILURE;
-    }
-
-    speaking_tag = gtk_text_buffer_create_tag(text_buffer, "speaking", "background", "black", "foreground", "white", NULL);
-    if (!speaking_tag)
-    {
-        g_critical("Dyslexic reader failed to create speaking tag.");
         g_object_unref(builder);
         return EXIT_FAILURE;
     }
