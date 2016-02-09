@@ -28,32 +28,50 @@ static void mark_up_text(dyslexic_reader_t *reader, const char* text_start, cons
     g_string_truncate(reader->marked_text, 0);
 
     const char* text = text_start;
+    uint32_t pos = 0;
 
     while(text < text_end)
     {
         const char* word_start = text;
+        uint32_t word_start_pos = pos; //To be UTF-8 safe, we must count characters separate from bytes.
+        gunichar c = g_utf8_get_char(word_start);
 
-        while(word_start < text_end && (isspace(*word_start) || ispunct(*word_start) || iscntrl(*word_start)))
-            word_start++;
+        while(word_start < text_end && (g_unichar_isspace(c) ||
+                                        g_unichar_ispunct(c) ||
+                                        g_unichar_iscntrl(c)))
+        {
+            word_start = g_utf8_next_char(word_start);
+            c = g_utf8_get_char(word_start);
+            ++word_start_pos;
+        }
 
         if (word_start < text_end)
         {
             const char* word_end = word_start;
+            uint32_t    word_end_pos = word_start_pos;
+            c = g_utf8_get_char(word_end);
 
-            while(word_end < text_end && (isalnum(*word_end) || ispunct(*word_end)))
-                word_end++;
+            while(word_end < text_end && (g_unichar_isalnum(c) ||
+                                          g_unichar_ispunct(c)))
+            {
+                word_end = g_utf8_next_char(word_end);
+                c = g_utf8_get_char(word_end);
+                ++word_end_pos;
+            }
 
             if (word_end == word_start)
             {
-                text++;
+                text = g_utf8_next_char(text);
+                ++pos;
                 continue;
             }
 
             uint marked_pos = (uint)reader->marked_text->len;
 
-            g_string_append_printf(reader->marked_text, "<mark name=\"%u-%u-%u\"/>", (uint)((uintptr_t)(word_start) - ((uintptr_t)text_start)), (uint)((uintptr_t)(word_end) - ((uintptr_t)text_start)), marked_pos);
+            g_string_append_printf(reader->marked_text, "<mark name=\"%u-%u-%u\"/>", word_start_pos, word_end_pos, marked_pos);
             g_string_append_printf(reader->marked_text, "%.*s", (int)((uintptr_t)(word_end) - ((uintptr_t)word_start)), word_start);
             text = word_end;
+            pos = word_end_pos;
         }
         else break;
     }
