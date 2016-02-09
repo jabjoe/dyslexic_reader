@@ -10,10 +10,10 @@ $(EXE_NAME) : main.o reader.o resources.o
 
 *.o: Makefile
 
-resources.h : resources.xml
+resources.h : resources.xml Makefile
 	$(GLIB_COMPILE_RESOURCES) --generate-header resources.xml 
 
-resources.c : resources.xml ui.glade
+resources.c : resources.xml ui.glade Makefile
 	$(GLIB_COMPILE_RESOURCES) --target=resources.c --generate-source resources.xml
 
 .PHONT: clean
