@@ -80,8 +80,10 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">ctrl-r</property>
                 <property name="image">image1</property>
                 <signal name="clicked" handler="read_btn_clicked_cb" object="main_window" swapped="no"/>
+                <accelerator key="r" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
                 <property name="left_attach">2</property>
@@ -94,9 +96,11 @@
                 <property name="width_request">96</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">ctrl-p</property>
                 <property name="valign">baseline</property>
                 <property name="image">image2</property>
                 <signal name="clicked" handler="pause_btn_clicked_cb" object="main_window" swapped="no"/>
+                <accelerator key="p" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
                 <property name="left_attach">3</property>
@@ -126,8 +130,10 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">ctrl-o</property>
                 <property name="image">image3</property>
                 <signal name="clicked" handler="stop_btn_clicked_cb" object="main_window" swapped="no"/>
+                <accelerator key="o" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
                 <property name="left_attach">1</property>
