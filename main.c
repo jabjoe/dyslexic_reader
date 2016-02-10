@@ -284,7 +284,10 @@ gboolean ipc_pipe_update_cb(gint fd,
 
     if (start == -1 && end == -1)
     {
+        gtk_text_iter_set_offset(&speaking_start, -1);
+        gtk_text_iter_set_offset(&speaking_end, -1);
 
+        gtk_text_buffer_select_range(gtk_text_view_get_buffer(text_view), &speaking_start, &speaking_end);
         gtk_widget_hide(pause_btn);
         gtk_widget_show_all(read_btn);
         gtk_text_view_set_editable (text_view, TRUE);
