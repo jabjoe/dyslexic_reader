@@ -186,6 +186,11 @@ static void save_settings()
 }
 
 
+extern void about_btn_clicked_cb(GtkButton* btn, GtkAboutDialog * about_dialog )
+{
+    gtk_dialog_run(GTK_DIALOG(about_dialog));
+    gtk_widget_hide(GTK_WIDGET(about_dialog));
+}
 
 
 extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog )
