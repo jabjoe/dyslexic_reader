@@ -6,12 +6,16 @@
       <description>Ajustment of reading speed.</description>
     </key>
     <key name="voice" type="s">
-      <default>'none'</default>
+      <default>'default'</default>
       <description>Voice of reader.</description>
     </key>
     <key name="language" type="s">
-      <default>'none'</default>
+      <default>'default'</default>
       <description>Language of reader.</description>
+    </key>
+    <key name="spelllang" type="s">
+      <default>'default'</default>
+      <description>Language of spelling of reader.</description>
     </key>
   </schema>
 </schemalist>
