@@ -22,6 +22,7 @@ GtkScrolledWindow * scroll_area = NULL;
 GtkTextIter     speaking_start;
 GtkTextIter     speaking_end;
 
+static int start_offset = 0;
 
 static int pipe_ipc[2];
 
@@ -67,6 +68,8 @@ extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
             gtk_text_buffer_get_iter_at_offset (text_buffer, &start, 0);
             gtk_text_buffer_get_iter_at_offset (text_buffer, &end, -1);
         }
+
+        start_offset = gtk_text_iter_get_offset(&start);
 
         const char* text_start = gtk_text_buffer_get_text(text_buffer, &start, &end, FALSE);
         const char* text_end = text_start + gtk_text_iter_get_offset(&end);
@@ -290,10 +293,8 @@ gboolean ipc_pipe_update_cb(gint fd,
     }
     else
     {
-
-
-        gtk_text_iter_set_offset(&speaking_start, start);
-        gtk_text_iter_set_offset(&speaking_end, end);
+        gtk_text_iter_set_offset(&speaking_start, start + start_offset);
+        gtk_text_iter_set_offset(&speaking_end, end + start_offset);
 
         gtk_text_buffer_select_range(gtk_text_view_get_buffer(text_view), &speaking_start, &speaking_end);
 
