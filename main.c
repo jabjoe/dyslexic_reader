@@ -75,7 +75,9 @@ extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
         const char* text_start = gtk_text_buffer_get_text(text_buffer, &start, &end, FALSE);
         const char* text_end = text_start;
 
-        while(end_offset--)
+        int count = end_offset - start_offset;
+
+        while(count--)
             text_end = g_utf8_next_char(text_end);
 
         if (dyslexic_reader_start_read(reader, text_start, text_end))
