@@ -14,6 +14,9 @@ $(EXE_NAME) : $(EXE_OBJS) gschemas.compiled
 
 *.o: Makefile
 
+main.o : resources.h
+resources.o : resources.c
+
 resources.h : resources.xml Makefile
 	$(GLIB_COMPILE_RESOURCES) --generate-header resources.xml 
 
