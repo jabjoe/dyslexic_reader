@@ -3,4 +3,7 @@
   <gresource prefix="/">
     <file preprocess="xml-stripblanks" compressed="true">ui.glade</file>
   </gresource>
+  <gresource prefix="/">
+    <file preprocess="xml-stripblanks" compressed="true">reader.svg</file>
+  </gresource>
 </gresources>

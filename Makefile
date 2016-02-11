@@ -17,7 +17,7 @@ $(EXE_NAME) : $(EXE_OBJS) gschemas.compiled
 main.o : resources.h
 resources.o : resources.c
 
-resources.h : resources.xml Makefile
+resources.h : resources.xml Makefile reader.svg
 	$(GLIB_COMPILE_RESOURCES) --generate-header resources.xml 
 
 resources.c : resources.xml ui.glade Makefile
