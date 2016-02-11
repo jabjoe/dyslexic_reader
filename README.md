@@ -9,6 +9,9 @@ It is my Dyslexic aid.
 
 Feel free to use it and patches are most welcome.
 
+At the moment this is purely for GNU/Linux. If there is a healthy cross
+platform alternative to speechd I might switch.
+
 
 Install
 =======
