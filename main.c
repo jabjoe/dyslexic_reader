@@ -26,18 +26,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "resources.h"
 
 
-GtkWidget   * read_btn     = NULL;
-GtkWidget   * pause_btn    = NULL;
-GtkWidget   * stop_btn     = NULL;
-GtkWidget   * settings_btn = NULL;
-GtkWidget   * main_window  = NULL;
-GtkTextView * text_view    = NULL;
-GtkBuilder  * builder      = NULL;
-GtkTextBuffer     * text_buffer = NULL;
-GtkScrolledWindow * scroll_area = NULL;
+static GtkWidget   * read_btn     = NULL;
+static GtkWidget   * pause_btn    = NULL;
+static GtkWidget   * stop_btn     = NULL;
+static GtkWidget   * settings_btn = NULL;
+static GtkWidget   * main_window  = NULL;
+static GtkTextView * text_view    = NULL;
+static GtkBuilder  * builder      = NULL;
+static GtkTextBuffer     * text_buffer = NULL;
+static GtkScrolledWindow * scroll_area = NULL;
 
-GtkTextIter     speaking_start;
-GtkTextIter     speaking_end;
+static GtkTextIter     speaking_start;
+static GtkTextIter     speaking_end;
 
 static int start_offset = 0;
 
@@ -241,6 +241,7 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
 
     gtk_adjustment_set_value( speed_spin_adj, settings.rate);
 
+
     gint result = gtk_dialog_run(settings_dialog);
 
     gtk_widget_hide (GTK_WIDGET(settings_dialog));
@@ -397,6 +398,7 @@ int main(int argc, char* argv[])
         g_object_unref(builder);
         return EXIT_FAILURE;
     }
+
     text_buffer = GTK_TEXT_BUFFER (gtk_builder_get_object (builder, "text_buffer"));
     if (!text_buffer)
     {
@@ -452,8 +454,11 @@ int main(int argc, char* argv[])
         gtk_widget_show (main_window);
         gtk_main ();
         dyslexic_reader_destroy(reader);
-        g_object_unref(builder);
     }
+
+    g_object_unref(builder);
+    g_resources_unregister(res);
+    g_resource_unref(res);
 
     if (settings.spell_lang)
         free((void*)settings.spell_lang);
