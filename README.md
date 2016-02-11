@@ -7,7 +7,7 @@ speechd to abstract from exact speech synthesis implementation.
 
 It is my Dyslexic aid.
 
-Feel free to use and patches are most welcome.
+Feel free to use it and patches are most welcome.
 
 
 Install
