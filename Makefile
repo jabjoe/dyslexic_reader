@@ -44,5 +44,6 @@ clean:
 	rm -f *.[od] $(EXE_NAME)
 	rm -f dyslexicreader.gschema.valid
 	rm -f gschemas.compiled
+	rm -rf resources.[ch]
 
 -include *.d
