@@ -178,7 +178,7 @@
     <property name="program_name">Dyslexic Reader</property>
     <property name="version">0.1</property>
     <property name="copyright" translatable="yes">Copyright © 2016 Joe Burmeister</property>
-    <property name="comments" translatable="yes">Dyslexic aid for checking spelling and what you put is what you meant.</property>
+    <property name="comments" translatable="yes">Dyslexic aid for checking spelling and that what you put is what you meant.</property>
     <property name="authors">Joe Burmeister &lt;joe.burmeister@excelsiorelectronics.com&gt;</property>
     <property name="logo">reader.svg</property>
     <property name="license_type">gpl-2-0</property>
