@@ -149,10 +149,13 @@ static void update_settings()
     dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(main_window), "reader");
     GtkSpellChecker *spellcheck = (GtkSpellChecker*) g_object_get_data(G_OBJECT(main_window), "spellcheck");
 
-    gtk_spell_checker_set_language (spellcheck, settings.spell_lang, NULL);
+    if (!gtk_spell_checker_set_language (spellcheck, settings.spell_lang, NULL))
+        fprintf(stderr, "Failed to change spelling to %s\n", settings.spell_lang);
     dyslexic_reader_set_rate(reader, settings.rate);
-    dyslexic_reader_set_voice(reader, settings.voice);
-    dyslexic_reader_set_language(reader, settings.language);
+    if (!dyslexic_reader_set_voice(reader, settings.voice))
+        fprintf(stderr, "Failed to change voice to %s\n", settings.voice);
+    if (!dyslexic_reader_set_language(reader, settings.language))
+        fprintf(stderr, "Failed to change language to %s\n", settings.language);
 }
 
 
@@ -249,6 +252,15 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
         settings.voice = voices[gtk_combo_box_get_active(GTK_COMBO_BOX(voices_ui))];
         settings.language = languages[lang_index];
         settings.rate = gtk_adjustment_get_value (speed_spin_adj);
+
+        i = 0;
+        for(GList* c = spell_langs; c; c = c->next, ++i)
+            if (i == gtk_combo_box_get_active(GTK_COMBO_BOX(spelling_ui)))
+            {
+                if (settings.spell_lang)
+                    free((void*)settings.spell_lang);
+                settings.spell_lang = strdup((const char*)c->data);
+            }
 
         update_settings();
         save_settings();
@@ -442,6 +454,9 @@ int main(int argc, char* argv[])
         dyslexic_reader_destroy(reader);
         g_object_unref(builder);
     }
+
+    if (settings.spell_lang)
+        free((void*)settings.spell_lang);
 
     return EXIT_SUCCESS;
 }
