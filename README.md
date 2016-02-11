@@ -13,7 +13,15 @@ Feel free to use and patches are most welcome.
 Install
 =======
 
-sudo make install
+At the moment it's just from source.
+
+In Debian/Ubuntu/Mint to install required packages do:
+
+    sudo apt-get install gcc make imagemagick libgtk-3-dev libspeechd-dev
+
+Then to install do:
+
+    sudo make install
 
 
 Authors
