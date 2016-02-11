@@ -32,11 +32,20 @@ gschemas.compiled: dyslexicreader.gschema.valid
 install: $(EXE_NAME)
 	cp dyslexicreader.gschema.xml $(GLIB_SCHEMAS_DIR)
 	cp $(EXE_NAME) /usr/local/bin/
+	mkdir -p /usr/local/share/icons/hicolor/scalable/apps/
+	mkdir -p /usr/local/share/icons/hicolor/48x48/apps/
+	convert -verbose reader.svg -resize 48x48 -extent 48x48 /usr/local/share/icons/hicolor/48x48/apps/dyslexic_reader.png
+	cp reader.svg /usr/local/share/icons/hicolor/scalable/apps/dyslexic_reader.svg
+	mkdir -p /usr/local/share/applications/
+	cp dyslexic_reader.desktop /usr/local/share/applications/
 	$(GLIB_COMPILE_SCHEMAS) $(GLIB_SCHEMAS_DIR)
 
 uninstall:
 	rm $(GLIB_SCHEMAS_DIR)/dyslexicreader.gschema.xml
 	rm /usr/local/bin/$(EXE_NAME)
+	rm /usr/local/share/icons/hicolor/48x48/apps/dyslexic_reader.png
+	rm /usr/local/share/icons/hicolor/scalable/apps/dyslexic_reader.svg
+	rm /usr/local/share/applications/dyslexic_reader.desktop
 	$(GLIB_COMPILE_SCHEMAS) $(GLIB_SCHEMAS_DIR)
 
 .PHONT: clean

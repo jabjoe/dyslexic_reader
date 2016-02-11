@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Dyslexic Reader
+Exec=/usr/local/bin/dyslexic_reader
+Terminal=false
+StartupNotify=true
+Type=Application
+Icon=dyslexic_reader.svg
+Categories=GTK;Office;
