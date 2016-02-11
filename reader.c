@@ -260,11 +260,9 @@ bool                dyslexic_reader_set_voice(dyslexic_reader_t* reader, const c
     SPDVoiceType type = SPD_MALE1;
     while(*voices)
     {
-        if (*voices == voice)
-        {
+        if (!strcmp(*voices, voice))
             if (!spd_set_voice_type(reader->speech_con, type))
                 return true;
-        }
         voices++;
         type++;
     }
