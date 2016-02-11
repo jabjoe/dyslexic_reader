@@ -241,7 +241,6 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
 
     gtk_adjustment_set_value( speed_spin_adj, settings.rate);
 
-
     gint result = gtk_dialog_run(settings_dialog);
 
     gtk_widget_hide (GTK_WIDGET(settings_dialog));
