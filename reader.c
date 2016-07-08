@@ -276,6 +276,10 @@ const char* const*  dyslexic_reader_list_languages(dyslexic_reader_t* reader)
         return (const char* const*)reader->languages;
 
     SPDVoice** languages = spd_list_synthesis_voices(reader->speech_con);
+
+    if (!languages)
+        return NULL;
+
     SPDVoice** languages_pos = languages;
     uint32_t count = 1; //For null
 
@@ -310,6 +314,10 @@ const char* const*  dyslexic_reader_list_languages_short(dyslexic_reader_t* read
 bool                dyslexic_reader_set_language(dyslexic_reader_t* reader, const char* language)
 {
     SPDVoice** languages = spd_list_synthesis_voices(reader->speech_con);
+
+    if (!languages)
+        return false;
+
     SPDVoice** languages_pos = languages;
 
     for(;*languages_pos;languages_pos++)

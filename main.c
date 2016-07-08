@@ -17,6 +17,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 #include <stdlib.h>
 #include <gtkspell/gtkspell.h>
+#include <gtksourceview/gtksourceview.h>
+#include <gtksourceview/gtksourcebuffer.h>
 #include <glib-unix.h>
 #include <gio/gio.h>
 #include <string.h>
