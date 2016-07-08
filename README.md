@@ -20,7 +20,7 @@ At the moment it's just from source.
 
 In Debian/Ubuntu/Mint to install required packages do:
 
-    sudo apt-get install gcc make imagemagick libgtk-3-dev libspeechd-dev
+    sudo apt-get install gcc make imagemagick libgtk-3-dev libspeechd-dev libgtksourceview-3.0-dev
 
 Then to install do:
 
