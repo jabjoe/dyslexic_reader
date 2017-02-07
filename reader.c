@@ -316,7 +316,10 @@ bool                dyslexic_reader_set_language(dyslexic_reader_t* reader, cons
     SPDVoice** languages = spd_list_synthesis_voices(reader->speech_con);
 
     if (!languages)
+    {
+        g_critical("SPD has no languages/voices.");
         return false;
+    }
 
     SPDVoice** languages_pos = languages;
 
