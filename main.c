@@ -36,6 +36,7 @@ static GtkWidget   * main_window  = NULL;
 static GtkTextView * text_view    = NULL;
 static GtkBuilder  * builder      = NULL;
 static GtkTextBuffer     * text_buffer = NULL;
+static GtkTextTag        * speaking_tag = NULL;
 static GtkScrolledWindow * scroll_area = NULL;
 
 static GtkTextIter     speaking_start;
@@ -353,12 +354,13 @@ gboolean ipc_pipe_update_cb(gint fd,
     safe_read(fd, &start, sizeof(start));
     safe_read(fd, &end, sizeof(end));
 
+    gtk_text_buffer_remove_tag(text_buffer,
+                           speaking_tag,
+                           &speaking_start,
+                           &speaking_end);
+
     if (start == -1 && end == -1)
     {
-        gtk_text_iter_set_offset(&speaking_start, -1);
-        gtk_text_iter_set_offset(&speaking_end, -1);
-
-        gtk_text_buffer_select_range(gtk_text_view_get_buffer(text_view), &speaking_start, &speaking_end);
         gtk_widget_hide(pause_btn);
         gtk_widget_show_all(read_btn);
         gtk_text_view_set_editable (text_view, TRUE);
@@ -370,7 +372,10 @@ gboolean ipc_pipe_update_cb(gint fd,
         gtk_text_iter_set_offset(&speaking_start, start + start_offset);
         gtk_text_iter_set_offset(&speaking_end, end + start_offset);
 
-        gtk_text_buffer_select_range(gtk_text_view_get_buffer(text_view), &speaking_start, &speaking_end);
+        gtk_text_buffer_apply_tag(text_buffer,
+                                  speaking_tag,
+                                  &speaking_start,
+                                  &speaking_end);
 
         GdkRectangle rect = {0};
 
@@ -425,6 +430,14 @@ int main(int argc, char* argv[])
     if (!text_buffer)
     {
         g_critical("Dyslexic reader requires \"text_buffer\" from GtkBuilder.");
+        g_object_unref(builder);
+        return EXIT_FAILURE;
+    }
+
+    speaking_tag = gtk_text_buffer_create_tag(text_buffer, "speaking", "background", "blue", "foreground", "yellow", NULL);
+    if (!speaking_tag)
+    {
+        g_critical("Dyslexic reader failed to create speaking tag.");
         g_object_unref(builder);
         return EXIT_FAILURE;
     }
