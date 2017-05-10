@@ -42,6 +42,9 @@ static GtkScrolledWindow * scroll_area = NULL;
 static GtkTextIter     speaking_start;
 static GtkTextIter     speaking_end;
 
+static GtkTextIter     speaking_range_start;
+static GtkTextIter     speaking_range_end;
+
 static int start_offset = 0;
 
 static int pipe_ipc[2];
@@ -74,26 +77,38 @@ extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
     }
     else
     {
-        GtkTextIter start, end;
-
         if (gtk_text_buffer_get_has_selection(text_buffer))
         {
-            if (!gtk_text_buffer_get_selection_bounds(text_buffer, &start, &end))
+            if (!gtk_text_buffer_get_selection_bounds(text_buffer,
+                                                &speaking_range_start,
+                                                &speaking_range_end))
             {
-                gtk_text_buffer_get_iter_at_offset (text_buffer, &start, 0);
-                gtk_text_buffer_get_iter_at_offset (text_buffer, &end, -1);
+                gtk_text_buffer_get_iter_at_offset (text_buffer,
+                                            &speaking_range_start, 0);
+                gtk_text_buffer_get_iter_at_offset (text_buffer,
+                                            &speaking_range_end, -1);
             }
+            GtkTextIter it_a, it_b;
+            gtk_text_buffer_get_iter_at_offset (text_buffer, &it_a, -1);
+            gtk_text_buffer_get_iter_at_offset (text_buffer, &it_b, -1);
+
+            gtk_text_buffer_select_range(text_buffer, &it_a, &it_b);
         }
         else
         {
-            gtk_text_buffer_get_iter_at_offset (text_buffer, &start, 0);
-            gtk_text_buffer_get_iter_at_offset (text_buffer, &end, -1);
+            gtk_text_buffer_get_iter_at_offset (text_buffer,
+                                            &speaking_range_start, 0);
+            gtk_text_buffer_get_iter_at_offset (text_buffer,
+                                            &speaking_range_end, -1);
         }
 
-        start_offset = gtk_text_iter_get_offset(&start);
-        int end_offset = gtk_text_iter_get_offset(&end);
+        start_offset = gtk_text_iter_get_offset(&speaking_range_start);
+        int end_offset = gtk_text_iter_get_offset(&speaking_range_end);
 
-        const char* text_start = gtk_text_buffer_get_text(text_buffer, &start, &end, FALSE);
+        const char* text_start = gtk_text_buffer_get_text(text_buffer,
+                                                &speaking_range_start,
+                                                &speaking_range_end,
+                                                FALSE);
         const char* text_end = text_start;
 
         int count = end_offset - start_offset;
@@ -366,6 +381,14 @@ gboolean ipc_pipe_update_cb(gint fd,
         gtk_text_view_set_editable (text_view, TRUE);
         gtk_widget_set_sensitive(settings_btn, TRUE);
         gtk_widget_set_sensitive(stop_btn, FALSE);
+
+        if (!gtk_text_iter_is_start(&speaking_range_start) ||
+            !gtk_text_iter_is_end(&speaking_range_end))
+        {
+            gtk_text_buffer_select_range(text_buffer,
+                                        &speaking_range_start,
+                                        &speaking_range_end);
+        }
     }
     else
     {
