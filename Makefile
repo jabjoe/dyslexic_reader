@@ -17,6 +17,9 @@ $(EXE_NAME) : $(EXE_OBJS) gschemas.compiled
 main.o : resources.h
 resources.o : resources.c
 
+%.o.dbg : %.c Makefile
+	$(CC) $(CFLAGS) -g -O0 -c $< -o $@
+
 resources.h : resources.xml Makefile reader.svg
 	$(GLIB_COMPILE_RESOURCES) --generate-header resources.xml 
 
@@ -28,6 +31,12 @@ dyslexicreader.gschema.valid: dyslexicreader.gschema.xml
 
 gschemas.compiled: dyslexicreader.gschema.valid
 	$(GLIB_COMPILE_SCHEMAS) .
+
+$(EXE_NAME).dbg : main.o.dbg reader.o.dbg resources.o
+	$(CC) $^ -g $(LDFLAGS) -o $@
+
+debug : $(EXE_NAME).dbg
+	gdb ./$(EXE_NAME).dbg
 
 install: $(EXE_NAME)
 	cp dyslexicreader.gschema.xml $(GLIB_SCHEMAS_DIR)
