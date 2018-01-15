@@ -180,8 +180,12 @@ static void update_settings()
     }
     if (!dyslexic_reader_set_language(reader, settings.language))
     {
-        g_critical("Failed to change language to %s", settings.language);
-        exit(-1);
+        g_warning("Failed to change language to %s", settings.language);
+        if (!dyslexic_reader_set_language(reader, "en"))
+        {
+            g_critical("Failed to even set language to english.");
+            exit(-1);
+        }
     }
 }
 
@@ -286,10 +290,18 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
 
     if (result == GTK_RESPONSE_OK)
     {
-        uint lang_index = gtk_combo_box_get_active(GTK_COMBO_BOX(language_ui));
+        int lang_index = gtk_combo_box_get_active(GTK_COMBO_BOX(language_ui));
+        if (lang_index < 0)
+            g_warning("Failed to find selected language.....");
+        else
+            settings.language = languages[lang_index];
 
-        settings.voice = voices[gtk_combo_box_get_active(GTK_COMBO_BOX(voices_ui))];
-        settings.language = languages[lang_index];
+        int voice_index = gtk_combo_box_get_active(GTK_COMBO_BOX(voices_ui));
+        if (voice_index < 0)
+            g_warning("Failed to find selected voice.....");
+        else
+            settings.voice = voices[voice_index];
+
         settings.rate = gtk_adjustment_get_value (speed_spin_adj);
 
         i = 0;
