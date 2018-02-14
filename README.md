@@ -2,10 +2,9 @@ Dyslexic Reader
 ===============
 
 This is a quick reimplementation of espeak-gui.
-But this time in C and with GTK3, and instead of espeak directly it uses
-speechd to abstract from exact speech synthesis implementation.
+But this time in C and with GTK3.
 
-It is my Dyslexic aid.
+It is my Dyslexic aid. I'll be honest, it's quick and dirty because it's just for me.
 
 Feel free to use it and patches are most welcome.
 
@@ -20,7 +19,7 @@ At the moment it's just from source.
 
 In Debian/Ubuntu/Mint to install required packages do:
 
-    sudo apt-get install gcc make imagemagick libgtk-3-dev libspeechd-dev libgtksourceview-3.0-dev speech-dispatcher-espeak
+    sudo apt-get install gcc make imagemagick libgtk-3-dev libgtksourceview-3.0-dev libespeak-ng-dev
 
 Then to install do:
 
