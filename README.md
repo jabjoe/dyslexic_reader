@@ -6,10 +6,10 @@ But this time in C and with GTK3.
 
 It is my Dyslexic aid. I'll be honest, it's quick and dirty because it's just for me.
 
+At the moment this is purely for GNU/Linux because that's my home.
+
 Feel free to use it and patches are most welcome.
 
-At the moment this is purely for GNU/Linux. If there is a healthy cross
-platform alternative to speechd I might switch.
 
 
 Install
