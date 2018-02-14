@@ -168,24 +168,17 @@ static void update_settings()
     GtkSpellChecker *spellcheck = (GtkSpellChecker*) g_object_get_data(G_OBJECT(main_window), "spellcheck");
 
     if (!gtk_spell_checker_set_language (spellcheck, settings.spell_lang, NULL))
-    {
-        g_critical("Failed to change spelling to %s", settings.spell_lang);
-        exit(-1);
-    }
+        g_warning("Failed to change spelling to %s", settings.spell_lang);
+
     dyslexic_reader_set_rate(reader, settings.rate);
     if (!dyslexic_reader_set_voice(reader, settings.voice))
-    {
-        g_critical("Failed to change voice to %s", settings.voice);
-        exit(-1);
-    }
+        g_warning("Failed to change voice to %s", settings.voice);
+
     if (!dyslexic_reader_set_language(reader, settings.language))
     {
         g_warning("Failed to change language to %s", settings.language);
         if (!dyslexic_reader_set_language(reader, "en"))
-        {
-            g_critical("Failed to even set language to english.");
-            exit(-1);
-        }
+            g_warning("Failed to even set language to english.");
     }
 }
 
@@ -246,33 +239,27 @@ extern void settings_btn_clicked_cb(GtkButton* btn, GtkDialog * settings_dialog 
     const char* const * voices = dyslexic_reader_list_voices(reader);
     const char* const * p = voices;
 
-    if (!voices)
+    if (voices)
     {
-        g_critical("Failed to find any voices.");
-        exit(-1);
-    }
-
-    for(;*p; p++)
-    {
-        gtk_combo_box_text_append_text(voices_ui,  *p);
-        if (settings.voice && !strcmp(*p, settings.voice))
-            gtk_combo_box_set_active(GTK_COMBO_BOX(voices_ui), p - voices);
-    }
+        for(;*p; p++)
+        {
+            gtk_combo_box_text_append_text(voices_ui,  *p);
+            if (settings.voice && !strcmp(*p, settings.voice))
+                gtk_combo_box_set_active(GTK_COMBO_BOX(voices_ui), p - voices);
+        }
+    } else g_warning("Failed to find any voices.");
 
     const char* const * languages = dyslexic_reader_list_languages(reader);
-
-    if (!languages)
+    if (languages)
     {
-        g_critical("Failed to find any languages.");
-        exit(-1);
+        for(int n = 0; languages[n]; ++n)
+        {
+            gtk_combo_box_text_append_text(language_ui,  languages[n]);
+            if (settings.language && !strcmp(languages[n], settings.language))
+                gtk_combo_box_set_active(GTK_COMBO_BOX(language_ui), n);
+        }
     }
-
-    for(int n = 0; languages[n]; ++n)
-    {
-        gtk_combo_box_text_append_text(language_ui,  languages[n]);
-        if (settings.language && !strcmp(languages[n], settings.language))
-            gtk_combo_box_set_active(GTK_COMBO_BOX(language_ui), n);
-    }
+    else g_warning("Failed to find any languages.");
 
     int i = 0;
     for(GList* c = spell_langs; c; c = c->next, ++i)
