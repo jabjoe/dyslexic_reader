@@ -26,12 +26,6 @@ Then to install do:
     sudo make install
 
 
-Authors
-=======
-
-Joe Burmeister : joe.burmeister@excelsiorelectronics.com
-
-
 License
 =======
 
