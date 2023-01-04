@@ -29,9 +29,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 struct dyslexic_reader_t
 {
-    const char    * current_text;
-    unsigned        current_size;
-    uint32_t        paused_pos;
+    char              * current_text;
+    unsigned            current_size;
+    double              rate;
 };
 
 static dyslexic_reader_t * dyslexic_reader_singleton = NULL;
@@ -40,14 +40,14 @@ static dyslexic_reader_t * dyslexic_reader_singleton = NULL;
 static void show_speaking(dyslexic_reader_t *reader, uint start, uint end)
 {
     reading_updated(reader, start, end);
-    reader->paused_pos = start;
+    reading_debug("Reading at %u", start);
 }
 
 
 static void dyslexic_reader_stopping(dyslexic_reader_t* reader)
 {
-    reader->paused_pos = -1;
     reading_stopped(reader);
+    reading_debug("Reading stopped");
 }
 
 
@@ -62,6 +62,7 @@ static int _dyslexic_reader_espeak_callback(short* wav, int numsamples, espeak_E
                           event->text_position - 1 + event->length);
         } else if (event->type == espeakEVENT_MSG_TERMINATED)
         {
+            reading_debug("Finished reading.");
             dyslexic_reader_stopping(dyslexic_reader_singleton);
         }
 
@@ -90,19 +91,8 @@ dyslexic_reader_t *dyslexic_reader_create()
 
     memset(reader, 0, sizeof(dyslexic_reader_t));
 
-    reader->paused_pos = -1;
-
-    int r = espeak_Initialize(AUDIO_OUTPUT_PLAYBACK, 0, NULL, espeakEVENT_WORD | espeakEVENT_MSG_TERMINATED);
-    if (r < 0)
-    {
-        g_critical("Dyslexic reader failed to start espeak-ng.");
-        free(reader);
-        return NULL;
-    }
-
-    espeak_SetSynthCallback(_dyslexic_reader_espeak_callback);
-
     dyslexic_reader_singleton = reader;
+    reader->rate = 100;
 
     return reader;
 }
@@ -115,61 +105,77 @@ void dyslexic_reader_destroy(dyslexic_reader_t* reader)
 }
 
 
+bool dyslexic_reader_finsihed(void)
+{
+    espeak_Synchronize();
+    espeak_Terminate();
+    if (dyslexic_reader_singleton->current_text)
+    {
+        free(dyslexic_reader_singleton->current_text);
+        dyslexic_reader_singleton->current_text = NULL;
+    }
+}
+
+
 bool dyslexic_reader_start_read(dyslexic_reader_t* reader, const char* text_start, const char* text_end)
 {
-    reader->paused_pos = -1;
+    if (reader->current_text)
+    {
+        free(reader->current_text);
+        reader->current_text = NULL;
+    }
 
-    reader->current_text = text_start;
-    reader->current_size = (unsigned)(((intptr_t)text_end) - ((uintptr_t)text_start));
+    reader->current_size = (unsigned)(((intptr_t)text_end) - ((uintptr_t)text_start)) + 1;
+    reader->current_text = malloc(reader->current_size );
+
+    memcpy(reader->current_text, text_start, reader->current_size);
+    reader->current_text[reader->current_size] = 0;
+
+    reading_debug("Beginning reading");
+
+    int r = espeak_Initialize(AUDIO_OUTPUT_PLAYBACK, 0, NULL, espeakINITIALIZE_DONT_EXIT);
+    if (r < 0)
+    {
+        g_critical("Dyslexic reader failed to start espeak-ng.");
+        return NULL;
+    }
+
+    espeak_SetSynthCallback(_dyslexic_reader_espeak_callback);
+    espeak_SetParameter(espeakRATE, 450 * reader->rate / 100, 0);
 
     espeak_ERROR e = espeak_Synth(reader->current_text, reader->current_size,
-                                  0, POS_SENTENCE, 0, espeakCHARS_AUTO, NULL, NULL);
+                                  0, POS_WORD, reader->current_size, espeakCHARS_AUTO, NULL, NULL);
 
     if (e == EE_OK)
         return true;
+
+    reading_debug("Failed to start read.");
 
     return false;
 }
 
 
-bool dyslexic_reader_start_pause(dyslexic_reader_t* reader)
+bool                dyslexic_reader_is_reading(dyslexic_reader_t* reader)
 {
-    return (espeak_Cancel() == EE_OK);
-}
-
-
-bool                dyslexic_reader_is_paused(dyslexic_reader_t* reader)
-{
-    return reader->paused_pos != -1;
-}
-
-
-bool dyslexic_reader_continue(dyslexic_reader_t* reader)
-{
-    espeak_ERROR e = espeak_Synth(reader->current_text, reader->current_size,
-                                  reader->paused_pos, POS_SENTENCE, 0, espeakCHARS_AUTO, NULL, NULL);
-
-    if (e == EE_OK)
-        return true;
-
-    return false;
+    return (reader->current_text)?true:false;
 }
 
 
 bool                dyslexic_reader_start_stop(dyslexic_reader_t* reader)
 {
+    reading_debug("Forcing reading stop.");
     if (espeak_Cancel() == EE_OK)
-    {
-        dyslexic_reader_stopping(reader);
         return true;
-    }
+
+    reading_debug("Failed to stop.");
     return false;
 }
 
 
 void                dyslexic_reader_set_rate(dyslexic_reader_t* reader, double rate)
 {
-    espeak_SetParameter(espeakRATE, 450 * rate / 100, 0);
+    reading_debug("Set rate to %G", rate);
+    reader->rate = rate;
 }
 
 

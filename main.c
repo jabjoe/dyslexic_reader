@@ -23,13 +23,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <gio/gio.h>
 #include <string.h>
 #include <errno.h>
+#include <stdarg.h>
 
 #include "reader.h"
 #include "resources.h"
 
 
 static GtkWidget   * read_btn     = NULL;
-static GtkWidget   * pause_btn    = NULL;
 static GtkWidget   * stop_btn     = NULL;
 static GtkWidget   * settings_btn = NULL;
 static GtkWidget   * main_window  = NULL;
@@ -49,6 +49,8 @@ static int start_offset = 0;
 
 static int pipe_ipc[2];
 
+static bool in_debug = false;
+
 
 typedef struct
 {
@@ -66,14 +68,9 @@ extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
 {
     dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(user_data), "reader");
 
-    if (dyslexic_reader_is_paused(reader))
+    if (dyslexic_reader_is_reading(reader))
     {
-        if (dyslexic_reader_continue(reader))
-        {
-            gtk_widget_hide(read_btn);
-            gtk_widget_show_all(pause_btn);
-        }
-        else dyslexic_reader_start_stop(reader);
+        dyslexic_reader_start_stop(reader);
     }
     else
     {
@@ -122,22 +119,9 @@ extern void read_btn_clicked_cb (GObject *object, gpointer user_data)
             gtk_text_buffer_get_iter_at_offset(text_buffer, &speaking_end, 0);
             gtk_text_view_set_editable (text_view, FALSE);
             gtk_widget_hide(read_btn);
-            gtk_widget_show_all(pause_btn);
+            gtk_widget_show_all(stop_btn);
             gtk_widget_set_sensitive(settings_btn, FALSE);
-            gtk_widget_set_sensitive(stop_btn, TRUE);
         }
-    }
-}
-
-
-extern void pause_btn_clicked_cb (GObject *object, gpointer user_data)
-{
-    dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(user_data), "reader");
-
-    if (dyslexic_reader_start_pause(reader))
-    {
-        gtk_widget_hide(pause_btn);
-        gtk_widget_show_all(read_btn);
     }
 }
 
@@ -359,6 +343,18 @@ void reading_updated(dyslexic_reader_t* reader, uint start, uint end)
 }
 
 
+void reading_debug(char * fmt, ...)
+{
+    if (!in_debug)
+        return;
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    va_end(ap);
+}
+
+
 gboolean ipc_pipe_update_cb(gint fd,
                           GIOCondition condition,
                           gpointer user_data)
@@ -375,11 +371,13 @@ gboolean ipc_pipe_update_cb(gint fd,
 
     if (start == -1 && end == -1)
     {
-        gtk_widget_hide(pause_btn);
+        dyslexic_reader_t *reader = (dyslexic_reader_t*) g_object_get_data(G_OBJECT(main_window), "reader");
+        dyslexic_reader_finsihed(reader);
+
         gtk_widget_show_all(read_btn);
+        gtk_widget_hide(stop_btn);
         gtk_text_view_set_editable (text_view, TRUE);
         gtk_widget_set_sensitive(settings_btn, TRUE);
-        gtk_widget_set_sensitive(stop_btn, FALSE);
 
         if (!gtk_text_iter_is_start(&speaking_range_start) ||
             !gtk_text_iter_is_end(&speaking_range_end))
@@ -426,6 +424,8 @@ int main(int argc, char* argv[])
 {
     gtk_init (&argc, &argv);
 
+    in_debug = (getenv("DEBUG") != NULL)?true:false;
+
     memset(&settings, 0, sizeof(settings));
 
     GResource * res = resources_get_resource();
@@ -465,13 +465,12 @@ int main(int argc, char* argv[])
     }
 
     read_btn     = GTK_WIDGET (gtk_builder_get_object (builder, "read_btn"));
-    pause_btn    = GTK_WIDGET (gtk_builder_get_object (builder, "pause_btn"));
     stop_btn     = GTK_WIDGET (gtk_builder_get_object (builder, "stop_btn"));
     settings_btn = GTK_WIDGET (gtk_builder_get_object (builder, "settings_btn"));
     text_view = GTK_TEXT_VIEW (gtk_builder_get_object (builder, "text_view"));
     scroll_area = GTK_SCROLLED_WINDOW (gtk_builder_get_object (builder, "scrolledwindow1"));
 
-    if (!read_btn || !pause_btn || !text_view || !settings_btn || !scroll_area)
+    if (!read_btn || !text_view || !settings_btn || !scroll_area)
     {
         g_critical("Dyslexic reader has not found are required widgets from GtkBuilder.");
         g_object_unref(builder);
