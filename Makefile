@@ -1,4 +1,4 @@
-CFLAGS := `pkg-config gtk+-3.0 espeak-ng gtksourceview-3.0 gtkspell3-3.0 --cflags` -MMD -MP -Wall
+CFLAGS := `pkg-config gtk+-3.0 espeak-ng gtksourceview-3.0 gtkspell3-3.0 --cflags` -MMD -MP -Wall -g
 LDFLAGS :=  -Wl,--no-as-needed  `pkg-config gtk+-3.0 espeak-ng gtksourceview-3.0 gtkspell3-3.0 --libs` -rdynamic
 
 GLIB_COMPILE_RESOURCES := `pkg-config --variable=glib_compile_resources gio-2.0`

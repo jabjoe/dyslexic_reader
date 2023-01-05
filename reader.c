@@ -129,7 +129,7 @@ bool dyslexic_reader_start_read(dyslexic_reader_t* reader, const char* text_star
     reader->current_text = malloc(reader->current_size );
 
     memcpy(reader->current_text, text_start, reader->current_size);
-    reader->current_text[reader->current_size] = 0;
+    reader->current_text[reader->current_size - 1] = 0;
 
     reading_debug("Beginning reading");
 
