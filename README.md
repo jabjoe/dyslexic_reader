@@ -7,9 +7,9 @@ But this time in C and with GTK3.
 It is my Dyslexic aid. I'll be honest, it's quick and dirty because it's just for me.
 
 At the moment this is purely for GNU/Linux because that's my home.
+The code is not Shakespear and does not all work, but it's good enough for my uses.
 
 Feel free to use it and patches are most welcome.
-
 
 
 Install
